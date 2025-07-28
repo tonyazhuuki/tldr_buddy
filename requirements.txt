@@ -1,0 +1,48 @@
+# Telegram Voice-to-Insight Pipeline Dependencies
+
+# Core Bot Framework
+aiogram==3.21.0
+
+# LLM API Integration
+openai==1.96.1
+
+# Audio API Integration (OpenAI Whisper API)
+# Note: No local speech recognition dependencies needed
+
+# Caching & Storage
+redis==6.2.0
+
+# Environment Management
+python-dotenv==1.1.1
+
+# Data Validation
+pydantic==2.8.0
+
+# Audio Processing (Basic - for format conversion if needed)
+ffmpeg-python==0.2.0
+pydub==0.25.1
+
+# Async File I/O
+aiofiles==23.2.0
+
+# Async Support
+asyncio-mqtt==0.16.1
+
+# JSON Schema Validation
+jsonschema==4.19.2
+
+# Background Tasks
+apscheduler==3.10.4
+
+# HTTP Client
+aiohttp==3.9.1
+
+# Logging
+structlog==23.2.0
+
+# Numerical Computing (Basic - kept for any remaining audio processing)
+numpy==1.24.3
+
+# Process Management
+psutil==7.0.0
+filelock==3.13.1 

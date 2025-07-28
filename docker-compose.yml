@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  # Main Telegram Bot Application
+  telegram-bot:
+    build: .
+    container_name: voice-insight-bot
+    environment:
+      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - REDIS_URL=redis://redis:6379
+      - MAX_FILE_SIZE=52428800
+      - WHISPER_MODEL=base
+      - DEFAULT_TTL=86400
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./temp:/app/temp
+      - ./modes:/app/modes
+      - ./logs:/app/logs
+    depends_on:
+      - redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis Cache & Storage
+  redis:
+    image: redis:7-alpine
+    container_name: voice-insight-redis
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Background Worker
+  cleanup-worker:
+    build: .
+    container_name: voice-insight-worker
+    command: python cleanup_worker.py
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - CLEANUP_INTERVAL=3600
+      - LOG_LEVEL=INFO
+    depends_on:
+      - redis
+    volumes:
+      - ./temp:/app/temp
+      - ./logs:/app/logs
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+
+networks:
+  default:
+    name: voice-insight-network 

@@ -1,0 +1,23 @@
+# Basic Telegram Voice-to-Insight Pipeline Dependencies
+# Simplified version for Python 3.13 compatibility testing
+
+# Core Bot Framework
+aiogram==3.4.1
+
+# LLM API Integration
+openai==1.3.0
+
+# Caching & Storage
+redis==5.0.0
+
+# Environment Management
+python-dotenv==1.0.0
+
+# JSON Schema Validation
+jsonschema==4.19.2
+
+# HTTP Client
+aiohttp==3.9.1
+
+# Logging
+structlog==23.2.0 

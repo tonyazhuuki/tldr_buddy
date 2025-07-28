@@ -1,0 +1,360 @@
+"""
+Text Processing Pipeline for Telegram Voice-to-Insight Bot
+
+Handles parallel processing of transcribed text through multiple modes (DEFAULT, TONE, custom).
+Provides structured output with summary, bullets, actions, and tone analysis.
+"""
+
+import asyncio
+import json
+import os
+import logging
+from datetime import datetime
+from typing import Dict, List, Optional, Any, Tuple
+from dataclasses import dataclass
+from pathlib import Path
+
+import openai
+from openai import OpenAI
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class Mode:
+    """Configuration for a processing mode"""
+    name: str
+    model: str
+    description: str
+    prompt: str
+    max_tokens: int
+    temperature: float
+    timeout: int
+    enabled: bool
+    created_at: str
+    version: str
+
+
+@dataclass
+class ProcessingResult:
+    """Result of text processing through multiple modes"""
+    success: bool
+    summary: Optional[str] = None
+    bullets: Optional[List[str]] = None
+    actions: Optional[str] = None
+    tone_analysis: Optional[Dict[str, str]] = None
+    error_message: Optional[str] = None
+    processing_time: Optional[float] = None
+
+
+class ModeManager:
+    """Manages loading and validation of processing modes"""
+    
+    def __init__(self, modes_directory: str = "modes"):
+        self.modes_directory = Path(modes_directory)
+        self.modes: Dict[str, Mode] = {}
+        self._last_reload = None
+        
+    def load_modes(self) -> Dict[str, Mode]:
+        """Load all modes from JSON files in modes directory"""
+        try:
+            self.modes = {}
+            
+            if not self.modes_directory.exists():
+                logger.warning(f"Modes directory {self.modes_directory} does not exist")
+                return self.modes
+                
+            for mode_file in self.modes_directory.glob("*.json"):
+                try:
+                    with open(mode_file, 'r', encoding='utf-8') as f:
+                        mode_data = json.load(f)
+                    
+                    # Validate mode configuration
+                    if self._validate_mode_config(mode_data):
+                        mode = Mode(**mode_data)
+                        self.modes[mode.name] = mode
+                        logger.info(f"Loaded mode: {mode.name} (model: {mode.model})")
+                    else:
+                        logger.error(f"Invalid mode configuration in {mode_file}")
+                        
+                except Exception as e:
+                    logger.error(f"Error loading mode from {mode_file}: {e}")
+                    
+            self._last_reload = datetime.now()
+            logger.info(f"Loaded {len(self.modes)} modes: {list(self.modes.keys())}")
+            return self.modes
+            
+        except Exception as e:
+            logger.error(f"Error loading modes: {e}")
+            return {}
+    
+    def _validate_mode_config(self, mode_data: Dict[str, Any]) -> bool:
+        """Validate mode configuration has required fields"""
+        required_fields = ['name', 'model', 'prompt', 'max_tokens', 'temperature', 'enabled']
+        
+        for field in required_fields:
+            if field not in mode_data:
+                logger.error(f"Missing required field '{field}' in mode configuration")
+                return False
+                
+        return True
+    
+    def get_mode(self, name: str) -> Optional[Mode]:
+        """Get mode by name"""
+        return self.modes.get(name)
+    
+    def get_enabled_modes(self) -> List[Mode]:
+        """Get all enabled modes"""
+        return [mode for mode in self.modes.values() if mode.enabled]
+    
+    def add_custom_mode(self, name: str, config: Dict[str, Any]) -> bool:
+        """Add a custom mode and save to file"""
+        try:
+            # Add default values if missing
+            config.setdefault('enabled', True)
+            config.setdefault('created_at', datetime.now().isoformat())
+            config.setdefault('version', '1.0')
+            config.setdefault('max_tokens', 1000)
+            config.setdefault('temperature', 0.5)
+            config.setdefault('timeout', 10)
+            config['name'] = name
+            
+            if not self._validate_mode_config(config):
+                return False
+                
+            # Save to file
+            mode_file = self.modes_directory / f"{name.lower()}.json"
+            with open(mode_file, 'w', encoding='utf-8') as f:
+                json.dump(config, f, indent=2, ensure_ascii=False)
+            
+            # Add to loaded modes
+            mode = Mode(**config)
+            self.modes[name] = mode
+            
+            logger.info(f"Added custom mode: {name}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error adding custom mode {name}: {e}")
+            return False
+
+
+class TextProcessor:
+    """Processes transcribed text through multiple modes in parallel"""
+    
+    def __init__(self, openai_api_key: str, modes_directory: str = "modes"):
+        self.client = OpenAI(api_key=openai_api_key)
+        self.mode_manager = ModeManager(modes_directory)
+        self.mode_manager.load_modes()
+        
+    async def process_parallel(self, text: str) -> ProcessingResult:
+        """Process text through DEFAULT and TONE modes in parallel"""
+        try:
+            start_time = asyncio.get_event_loop().time()
+            
+            # Get required modes
+            default_mode = self.mode_manager.get_mode("DEFAULT")
+            tone_mode = self.mode_manager.get_mode("TONE")
+            
+            if not default_mode or not tone_mode:
+                missing = []
+                if not default_mode:
+                    missing.append("DEFAULT")
+                if not tone_mode:
+                    missing.append("TONE")
+                
+                error_msg = f"Required modes not found: {', '.join(missing)}"
+                logger.error(error_msg)
+                return ProcessingResult(success=False, error_message=error_msg)
+            
+            # Process both modes in parallel
+            tasks = [
+                self._process_mode(text, default_mode),
+                self._process_mode(text, tone_mode)
+            ]
+            
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            
+            # Parse results
+            default_result = results[0] if not isinstance(results[0], Exception) else None
+            tone_result = results[1] if not isinstance(results[1], Exception) else None
+            
+            # Ensure results are strings or None
+            default_text = default_result if isinstance(default_result, str) else None
+            tone_text = tone_result if isinstance(tone_result, str) else None
+            
+            # Parse DEFAULT mode result
+            summary, bullets, actions = self._parse_default_result(default_text)
+            
+            # Parse TONE mode result
+            tone_analysis = self._parse_tone_result(tone_text)
+            
+            processing_time = asyncio.get_event_loop().time() - start_time
+            
+            return ProcessingResult(
+                success=True,
+                summary=summary,
+                bullets=bullets,
+                actions=actions,
+                tone_analysis=tone_analysis,
+                processing_time=processing_time
+            )
+            
+        except Exception as e:
+            logger.error(f"Error in parallel processing: {e}")
+            return ProcessingResult(success=False, error_message=str(e))
+    
+    async def _process_mode(self, text: str, mode: Mode) -> Optional[str]:
+        """Process text through a single mode"""
+        try:
+            # Format prompt with text
+            formatted_prompt = mode.prompt.format(text=text)
+            
+            # Make API call
+            response = await asyncio.to_thread(
+                self.client.chat.completions.create,
+                model=mode.model,
+                messages=[
+                    {"role": "user", "content": formatted_prompt}
+                ],
+                max_tokens=mode.max_tokens,
+                temperature=mode.temperature,
+                timeout=mode.timeout
+            )
+            
+            content = response.choices[0].message.content
+            if content:
+                result = content.strip()
+                logger.info(f"Mode {mode.name} processed successfully")
+                return result
+            else:
+                logger.warning(f"Mode {mode.name} returned empty content")
+                return None
+            
+        except Exception as e:
+            logger.error(f"Error processing mode {mode.name}: {e}")
+            return None
+    
+    def _parse_default_result(self, result: Optional[str]) -> Tuple[Optional[str], Optional[List[str]], Optional[str]]:
+        """Parse DEFAULT mode result into summary, bullets, and actions"""
+        if not result:
+            return None, None, None
+            
+        try:
+            lines = result.split('\n')
+            summary = None
+            bullets = []
+            actions = None
+            
+            current_section = None
+            
+            for line in lines:
+                line = line.strip()
+                if not line:
+                    continue
+                    
+                if line.startswith('РЕЗЮМЕ:'):
+                    summary = line.replace('РЕЗЮМЕ:', '').strip()
+                    current_section = 'summary'
+                elif line.startswith('ОСНОВНЫЕ ПУНКТЫ:'):
+                    current_section = 'bullets'
+                elif line.startswith('ДЕЙСТВИЯ:'):
+                    actions = line.replace('ДЕЙСТВИЯ:', '').strip()
+                    current_section = 'actions'
+                elif line.startswith('•') and current_section == 'bullets':
+                    bullets.append(line.replace('•', '').strip())
+            
+            return summary, bullets if bullets else None, actions
+            
+        except Exception as e:
+            logger.error(f"Error parsing DEFAULT result: {e}")
+            return None, None, None
+    
+    def _parse_tone_result(self, result: Optional[str]) -> Optional[Dict[str, str]]:
+        """Parse TONE mode result into structured analysis"""
+        if not result:
+            return None
+            
+        try:
+            lines = result.split('\n')
+            tone_data = {}
+            
+            for line in lines:
+                line = line.strip()
+                if not line:
+                    continue
+                    
+                if line.startswith('СКРЫТЫЕ НАМЕРЕНИЯ:'):
+                    tone_data['hidden_intent'] = line.replace('СКРЫТЫЕ НАМЕРЕНИЯ:', '').strip()
+                elif line.startswith('ДОМИНИРУЮЩАЯ ЭМОЦИЯ:'):
+                    tone_data['dominant_emotion'] = line.replace('ДОМИНИРУЮЩАЯ ЭМОЦИЯ:', '').strip()
+                elif line.startswith('СТИЛЬ ВЗАИМОДЕЙСТВИЯ:'):
+                    tone_data['interaction_style'] = line.replace('СТИЛЬ ВЗАИМОДЕЙСТВИЯ:', '').strip()
+            
+            return tone_data if tone_data else None
+            
+        except Exception as e:
+            logger.error(f"Error parsing TONE result: {e}")
+            return None
+    
+    def format_output(self, result: ProcessingResult) -> str:
+        """Format processing result according to ТЗ specification"""
+        if not result.success:
+            return f"❌ Ошибка обработки: {result.error_message or 'Неизвестная ошибка'}"
+        
+        output_parts = []
+        
+        # Summary
+        if result.summary:
+            output_parts.append(f"📝 **Резюме**: {result.summary}")
+        
+        # Bullets
+        if result.bullets:
+            bullets_text = "\n".join([f"• {bullet}" for bullet in result.bullets])
+            output_parts.append(f"**Основные пункты**:\n{bullets_text}")
+        
+        # Actions
+        if result.actions and result.actions.lower() != 'нет' and result.actions.strip():
+            output_parts.append(f"👉 **Действия**: {result.actions}")
+        
+        # Tone analysis
+        if result.tone_analysis:
+            tone_parts = []
+            if result.tone_analysis.get('hidden_intent'):
+                tone_parts.append(f"намерения: {result.tone_analysis['hidden_intent']}")
+            if result.tone_analysis.get('dominant_emotion'):
+                tone_parts.append(f"эмоция: {result.tone_analysis['dominant_emotion']}")
+            if result.tone_analysis.get('interaction_style'):
+                tone_parts.append(f"стиль: {result.tone_analysis['interaction_style']}")
+            
+            if tone_parts:
+                tone_text = ", ".join(tone_parts)
+                output_parts.append(f"🎭 **Тон**: {tone_text}")
+        
+        # Processing time
+        if result.processing_time:
+            output_parts.append(f"\n⏱️ Обработано за {result.processing_time:.1f}с")
+        
+        return "\n\n".join(output_parts) if output_parts else "❌ Нет результатов обработки"
+    
+    def reload_modes(self):
+        """Reload modes from files (hot-reload capability)"""
+        self.mode_manager.load_modes()
+        logger.info("Modes reloaded successfully")
+
+
+# Example usage and testing
+if __name__ == "__main__":
+    async def test_processor():
+        """Test the text processor with sample data"""
+        # This would normally use real API key from config
+        processor = TextProcessor("test-key")
+        
+        sample_text = "Привет, мне нужно завтра созвониться с командой по поводу нового проекта. Думаю, стоит обсудить бюджет и сроки."
+        
+        result = await processor.process_parallel(sample_text)
+        formatted = processor.format_output(result)
+        print(formatted)
+    
+    # Run test if executed directly
+    # asyncio.run(test_processor()) 
