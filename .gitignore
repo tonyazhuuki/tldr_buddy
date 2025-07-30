@@ -1,4 +1,40 @@
+# Environment files
 .env
+.env.local
+.env.production
+
+# Virtual environment
 .venv/
+venv/
+env/
+
+# Python cache
 __pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Application specific
 audio-cache/
+temp/
+*.tmp
+logs/
+*.log
+
+# Process manager files
+.bot_instance.lock
+.bot_instance.lock.info
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Railway
+.railway/

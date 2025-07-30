@@ -438,24 +438,90 @@ async def startup():
         logger.error("Bot will start but speech processing will be unavailable")
 
 
+async def on_startup():
+    """Startup actions"""
+    await startup()
+    # Set webhook if WEBHOOK_URL is provided
+    webhook_url = os.getenv('WEBHOOK_URL')
+    if webhook_url:
+        await bot.set_webhook(webhook_url)
+        logger.info(f"Webhook set to {webhook_url}")
+
+
 async def main():
     """Main bot function"""
     logger.info("Starting Telegram Voice-to-Insight Pipeline Bot...")
     
-    # Initialize speech processing
-    await startup()
+    # Check if we should use webhook or polling
+    webhook_url = os.getenv('WEBHOOK_URL')
+    port = int(os.getenv('PORT', 8000))
     
-    # Start polling
-    await dp.start_polling(bot)
+    if webhook_url:
+        # Webhook mode for Railway
+        logger.info(f"Starting in webhook mode on port {port}")
+        
+        # Initialize speech processing
+        await startup()
+        
+        # Create aiohttp app
+        app = web.Application()
+        
+        # Add health check route
+        app.router.add_get('/health', health_check)
+        
+        # Setup webhook
+        webhook_path = '/webhook'
+        app.router.add_post(webhook_path, SimpleRequestHandler(dispatcher=dp, bot=bot).handle)
+        
+        # Set webhook
+        await bot.set_webhook(f"{webhook_url}{webhook_path}")
+        
+        # Start server
+        runner = web.AppRunner(app)
+        await runner.setup()
+        site = web.TCPSite(runner, '0.0.0.0', port)
+        await site.start()
+        
+        logger.info(f"Webhook server started on port {port}")
+        
+        # Keep the server running
+        try:
+            while True:
+                await asyncio.sleep(1)
+        except KeyboardInterrupt:
+            pass
+        finally:
+            await bot.delete_webhook()
+            await runner.cleanup()
+    else:
+        # Polling mode for local development
+        logger.info("Starting in polling mode")
+        
+        # Initialize speech processing
+        await startup()
+        
+        # Start polling
+        await dp.start_polling(bot)
 
 
 if __name__ == "__main__":
-    # Enforce single instance before starting the bot
+    # Skip single instance enforcement in production (Railway)
+    is_production = os.getenv('RAILWAY_ENVIRONMENT') or os.getenv('WEBHOOK_URL')
+    
+    if not is_production:
+        # Enforce single instance only in local development
+        try:
+            logger.info("Инициализация single-instance enforcement...")
+            process_manager = enforce_single_instance(auto_cleanup=True, force_cleanup=False)
+            logger.info("✅ Single-instance enforcement активирован")
+        except Exception as e:
+            logger.error(f"Ошибка при инициализации process manager: {e}")
+            process_manager = None
+    else:
+        logger.info("Production environment detected, skipping single-instance enforcement")
+        process_manager = None
+    
     try:
-        logger.info("Инициализация single-instance enforcement...")
-        process_manager = enforce_single_instance(auto_cleanup=True, force_cleanup=False)
-        logger.info("✅ Single-instance enforcement активирован")
-        
         # Start the bot
         asyncio.run(main())
         
@@ -466,7 +532,7 @@ if __name__ == "__main__":
         sys.exit(1)
     finally:
         # Ensure process manager cleanup
-        if 'process_manager' in locals():
+        if process_manager:
             try:
                 process_manager.release_lock()
                 logger.info("✅ Process manager очищен")
