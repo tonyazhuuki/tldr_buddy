@@ -492,7 +492,19 @@ async def main():
     
     # Check if we should use webhook or polling
     webhook_url = os.getenv('WEBHOOK_URL')
-    port = int(os.getenv('PORT', 3000))  # Railway provides PORT automatically
+    
+    # Railway port detection - try multiple sources
+    port = 3000  # Default fallback
+    port_env = os.getenv('PORT')
+    if port_env:
+        port = int(port_env)
+        logger.info(f"Using PORT from environment: {port}")
+    elif os.getenv('RAILWAY_ENVIRONMENT'):
+        # Railway sometimes doesn't set PORT, use common Railway ports
+        port = 8080  # Railway's common internal port
+        logger.info(f"Railway environment detected, using port: {port}")
+    else:
+        logger.info(f"Using default port: {port}")
     
     logger.info(f"Configuration:")
     logger.info(f"- Mode: {'Webhook' if webhook_url else 'Polling'}")
