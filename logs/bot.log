@@ -4759,3 +4759,260 @@
 2025-07-30 20:33:51,150 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - Request timeout error
 2025-07-30 20:33:51,152 - aiogram.dispatcher - WARNING - Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 7665257525)
 2025-07-30 20:34:04,242 - aiogram.dispatcher - INFO - Connection established (tryings = 1, bot id = 7665257525)
+2025-07-30 21:03:46,099 - __main__ - INFO - Received video note from user 81830450, duration: 60s, file_id: DQACAgIAAxkBAANKaIpegpNY8sCV1s9qciJhNlzsB9gAAkiOAAIbTlBICUPh-oeTyNA2BA
+2025-07-30 21:03:47,823 - speech_pipeline - INFO - Starting speech pipeline for file DQACAgIAAxkBAANKaIpegpNY8sCV1s9qciJhNlzsB9gAAkiOAAIbTlBICUPh-oeTyNA2BA, user 81830450
+2025-07-30 21:03:49,061 - audio_processor - INFO - Analyzed file DQACAgIAAxkBAANKaIpegpNY8sCV1s9qciJhNlzsB9gAAkiOAAIbTlBICUPh-oeTyNA2BA: mp4, 8026971 bytes, optimal: False
+2025-07-30 21:03:54,307 - audio_processor - INFO - Converted 8026971 bytes for DQACAgIAAxkBAANKaIpegpNY8sCV1s9qciJhNlzsB9gAAkiOAAIbTlBICUPh-oeTyNA2BA
+2025-07-30 21:03:54,308 - audio_processor - INFO - Audio processing completed for DQACAgIAAxkBAANKaIpegpNY8sCV1s9qciJhNlzsB9gAAkiOAAIbTlBICUPh-oeTyNA2BA in 6.48s
+2025-07-30 21:03:54,308 - speech_pipeline - INFO - Audio processing completed in 6.48s, got 8026971 bytes
+2025-07-30 21:04:25,293 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/audio/transcriptions "HTTP/1.1 200 OK"
+2025-07-30 21:04:25,304 - speech_pipeline - INFO - Speech recognition completed in 31.00s, detected language: russian, confidence: 1.00
+2025-07-30 21:04:25,305 - speech_pipeline - INFO - Pipeline completed successfully in 37.48s total (audio: 6.48s, speech: 31.00s)
+2025-07-30 21:04:34,393 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-30 21:04:34,407 - text_processor - INFO - Mode DEFAULT processed successfully
+2025-07-30 21:04:35,474 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-30 21:04:35,476 - text_processor - INFO - Mode TONE processed successfully
+2025-07-30 21:04:37,050 - aiogram.event - INFO - Update id=702113382 is handled. Duration 50961 ms by bot id=7665257525
+2025-07-30 21:09:44,189 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: terminated by setWebhook request
+2025-07-30 21:09:44,191 - aiogram.dispatcher - WARNING - Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 7665257525)
+2025-07-30 21:09:48,684 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:09:48,685 - aiogram.dispatcher - WARNING - Sleep for 1.183304 seconds and try again... (tryings = 1, bot id = 7665257525)
+2025-07-30 21:09:50,283 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:09:50,283 - aiogram.dispatcher - WARNING - Sleep for 1.494749 seconds and try again... (tryings = 2, bot id = 7665257525)
+2025-07-30 21:09:55,237 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:09:55,237 - aiogram.dispatcher - WARNING - Sleep for 1.857659 seconds and try again... (tryings = 3, bot id = 7665257525)
+2025-07-30 21:09:57,504 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:09:57,504 - aiogram.dispatcher - WARNING - Sleep for 2.291991 seconds and try again... (tryings = 4, bot id = 7665257525)
+2025-07-30 21:10:03,344 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:10:03,346 - aiogram.dispatcher - WARNING - Sleep for 3.021801 seconds and try again... (tryings = 5, bot id = 7665257525)
+2025-07-30 21:10:06,849 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:10:06,849 - aiogram.dispatcher - WARNING - Sleep for 3.815525 seconds and try again... (tryings = 6, bot id = 7665257525)
+2025-07-30 21:10:11,090 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:10:11,091 - aiogram.dispatcher - WARNING - Sleep for 4.826871 seconds and try again... (tryings = 7, bot id = 7665257525)
+2025-07-30 21:10:16,485 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:10:16,486 - aiogram.dispatcher - WARNING - Sleep for 4.968508 seconds and try again... (tryings = 8, bot id = 7665257525)
+2025-07-30 21:10:21,986 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:10:21,987 - aiogram.dispatcher - WARNING - Sleep for 4.919463 seconds and try again... (tryings = 9, bot id = 7665257525)
+2025-07-30 21:10:27,756 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:10:27,757 - aiogram.dispatcher - WARNING - Sleep for 4.982806 seconds and try again... (tryings = 10, bot id = 7665257525)
+2025-07-30 21:10:33,976 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:10:33,977 - aiogram.dispatcher - WARNING - Sleep for 4.842497 seconds and try again... (tryings = 11, bot id = 7665257525)
+2025-07-30 21:10:38,959 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:10:38,960 - aiogram.dispatcher - WARNING - Sleep for 4.854880 seconds and try again... (tryings = 12, bot id = 7665257525)
+2025-07-30 21:10:44,005 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:10:44,006 - aiogram.dispatcher - WARNING - Sleep for 4.886653 seconds and try again... (tryings = 13, bot id = 7665257525)
+2025-07-30 21:10:49,168 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:10:49,170 - aiogram.dispatcher - WARNING - Sleep for 5.036027 seconds and try again... (tryings = 14, bot id = 7665257525)
+2025-07-30 21:10:55,060 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:10:55,061 - aiogram.dispatcher - WARNING - Sleep for 4.965668 seconds and try again... (tryings = 15, bot id = 7665257525)
+2025-07-30 21:11:01,273 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:11:01,274 - aiogram.dispatcher - WARNING - Sleep for 4.958093 seconds and try again... (tryings = 16, bot id = 7665257525)
+2025-07-30 21:11:06,373 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:11:06,374 - aiogram.dispatcher - WARNING - Sleep for 5.021724 seconds and try again... (tryings = 17, bot id = 7665257525)
+2025-07-30 21:11:12,419 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:11:12,420 - aiogram.dispatcher - WARNING - Sleep for 4.951746 seconds and try again... (tryings = 18, bot id = 7665257525)
+2025-07-30 21:11:17,734 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:11:17,734 - aiogram.dispatcher - WARNING - Sleep for 4.951538 seconds and try again... (tryings = 19, bot id = 7665257525)
+2025-07-30 21:11:23,261 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:11:23,262 - aiogram.dispatcher - WARNING - Sleep for 4.779882 seconds and try again... (tryings = 20, bot id = 7665257525)
+2025-07-30 21:11:28,734 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:11:28,735 - aiogram.dispatcher - WARNING - Sleep for 4.993127 seconds and try again... (tryings = 21, bot id = 7665257525)
+2025-07-30 21:11:33,926 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:11:33,928 - aiogram.dispatcher - WARNING - Sleep for 5.008780 seconds and try again... (tryings = 22, bot id = 7665257525)
+2025-07-30 21:11:39,417 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:11:39,417 - aiogram.dispatcher - WARNING - Sleep for 5.007005 seconds and try again... (tryings = 23, bot id = 7665257525)
+2025-07-30 21:11:44,719 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:11:44,720 - aiogram.dispatcher - WARNING - Sleep for 5.050738 seconds and try again... (tryings = 24, bot id = 7665257525)
+2025-07-30 21:11:50,189 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:11:50,189 - aiogram.dispatcher - WARNING - Sleep for 5.009735 seconds and try again... (tryings = 25, bot id = 7665257525)
+2025-07-30 21:11:55,685 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:11:55,687 - aiogram.dispatcher - WARNING - Sleep for 4.979382 seconds and try again... (tryings = 26, bot id = 7665257525)
+2025-07-30 21:12:01,073 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:12:01,073 - aiogram.dispatcher - WARNING - Sleep for 4.817152 seconds and try again... (tryings = 27, bot id = 7665257525)
+2025-07-30 21:12:06,352 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:12:06,352 - aiogram.dispatcher - WARNING - Sleep for 5.036061 seconds and try again... (tryings = 28, bot id = 7665257525)
+2025-07-30 21:12:11,945 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:12:11,946 - aiogram.dispatcher - WARNING - Sleep for 4.766931 seconds and try again... (tryings = 29, bot id = 7665257525)
+2025-07-30 21:12:17,370 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:12:17,371 - aiogram.dispatcher - WARNING - Sleep for 5.066714 seconds and try again... (tryings = 30, bot id = 7665257525)
+2025-07-30 21:12:23,321 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:12:23,322 - aiogram.dispatcher - WARNING - Sleep for 4.955130 seconds and try again... (tryings = 31, bot id = 7665257525)
+2025-07-30 21:12:29,336 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:12:29,337 - aiogram.dispatcher - WARNING - Sleep for 5.080301 seconds and try again... (tryings = 32, bot id = 7665257525)
+2025-07-30 21:12:34,772 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:12:34,772 - aiogram.dispatcher - WARNING - Sleep for 5.064142 seconds and try again... (tryings = 33, bot id = 7665257525)
+2025-07-30 21:12:40,286 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:12:40,286 - aiogram.dispatcher - WARNING - Sleep for 5.147531 seconds and try again... (tryings = 34, bot id = 7665257525)
+2025-07-30 21:12:45,849 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:12:45,849 - aiogram.dispatcher - WARNING - Sleep for 5.004206 seconds and try again... (tryings = 35, bot id = 7665257525)
+2025-07-30 21:12:51,361 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:12:51,361 - aiogram.dispatcher - WARNING - Sleep for 4.914753 seconds and try again... (tryings = 36, bot id = 7665257525)
+2025-07-30 21:12:56,969 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:12:56,970 - aiogram.dispatcher - WARNING - Sleep for 5.032216 seconds and try again... (tryings = 37, bot id = 7665257525)
+2025-07-30 21:13:03,280 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:13:03,281 - aiogram.dispatcher - WARNING - Sleep for 4.939377 seconds and try again... (tryings = 38, bot id = 7665257525)
+2025-07-30 21:13:08,384 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:13:08,385 - aiogram.dispatcher - WARNING - Sleep for 5.113304 seconds and try again... (tryings = 39, bot id = 7665257525)
+2025-07-30 21:13:13,746 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:13:13,747 - aiogram.dispatcher - WARNING - Sleep for 4.963765 seconds and try again... (tryings = 40, bot id = 7665257525)
+2025-07-30 21:13:19,364 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:13:19,365 - aiogram.dispatcher - WARNING - Sleep for 5.113836 seconds and try again... (tryings = 41, bot id = 7665257525)
+2025-07-30 21:13:26,097 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:13:26,098 - aiogram.dispatcher - WARNING - Sleep for 5.029461 seconds and try again... (tryings = 42, bot id = 7665257525)
+2025-07-30 21:13:32,515 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:13:32,516 - aiogram.dispatcher - WARNING - Sleep for 5.094615 seconds and try again... (tryings = 43, bot id = 7665257525)
+2025-07-30 21:13:39,409 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:13:39,411 - aiogram.dispatcher - WARNING - Sleep for 5.130018 seconds and try again... (tryings = 44, bot id = 7665257525)
+2025-07-30 21:13:44,759 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:13:44,760 - aiogram.dispatcher - WARNING - Sleep for 5.187486 seconds and try again... (tryings = 45, bot id = 7665257525)
+2025-07-30 21:13:50,213 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:13:50,216 - aiogram.dispatcher - WARNING - Sleep for 4.973680 seconds and try again... (tryings = 46, bot id = 7665257525)
+2025-07-30 21:13:55,879 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:13:55,880 - aiogram.dispatcher - WARNING - Sleep for 4.948127 seconds and try again... (tryings = 47, bot id = 7665257525)
+2025-07-30 21:14:02,125 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:14:02,126 - aiogram.dispatcher - WARNING - Sleep for 4.994821 seconds and try again... (tryings = 48, bot id = 7665257525)
+2025-07-30 21:14:08,551 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:14:08,553 - aiogram.dispatcher - WARNING - Sleep for 4.845738 seconds and try again... (tryings = 49, bot id = 7665257525)
+2025-07-30 21:14:13,590 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:14:13,592 - aiogram.dispatcher - WARNING - Sleep for 5.238615 seconds and try again... (tryings = 50, bot id = 7665257525)
+2025-07-30 21:14:20,559 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:14:20,560 - aiogram.dispatcher - WARNING - Sleep for 4.944925 seconds and try again... (tryings = 51, bot id = 7665257525)
+2025-07-30 21:14:25,994 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:14:25,994 - aiogram.dispatcher - WARNING - Sleep for 5.191214 seconds and try again... (tryings = 52, bot id = 7665257525)
+2025-07-30 21:14:29,618 - aiogram.dispatcher - WARNING - Received SIGTERM signal
+2025-07-30 21:14:29,620 - aiogram.dispatcher - INFO - Polling stopped for bot @TLDRBuddy_bot id=7665257525 - 'TL;DR Buddy'
+2025-07-30 21:14:29,620 - aiogram.dispatcher - INFO - Polling stopped
+2025-07-30 21:14:29,882 - process_manager - INFO - Блокировка освобождена: /Users/zhuuki/Cursor/FirstProject/.bot_instance.lock
+2025-07-30 21:14:29,883 - __main__ - INFO - ✅ Process manager очищен
+2025-07-30 21:27:56,767 - __main__ - INFO - Инициализация single-instance enforcement...
+2025-07-30 21:27:56,768 - process_manager - INFO - Обработчики сигналов настроены
+2025-07-30 21:27:56,768 - process_manager - INFO - Проверка single-instance enforcement...
+2025-07-30 21:27:56,786 - process_manager - INFO - Блокировка получена: /Users/zhuuki/Cursor/FirstProject/.bot_instance.lock
+2025-07-30 21:27:56,786 - process_manager - INFO - Single-instance enforcement успешно установлен
+2025-07-30 21:27:56,786 - __main__ - INFO - ✅ Single-instance enforcement активирован
+2025-07-30 21:27:56,787 - __main__ - INFO - Starting Telegram Voice-to-Insight Pipeline Bot...
+2025-07-30 21:27:56,787 - __main__ - INFO - Configuration:
+2025-07-30 21:27:56,787 - __main__ - INFO - - Mode: Polling
+2025-07-30 21:27:56,787 - __main__ - INFO - - Port: 8000
+2025-07-30 21:27:56,787 - __main__ - INFO - - Webhook URL: 
+2025-07-30 21:27:56,787 - __main__ - INFO - 🔄 Starting in polling mode
+2025-07-30 21:27:56,787 - __main__ - INFO - === STARTUP INITIALIZATION ===
+2025-07-30 21:27:56,787 - __main__ - INFO - Environment check:
+2025-07-30 21:27:56,787 - __main__ - INFO - - TELEGRAM_TOKEN: ✓ Set
+2025-07-30 21:27:56,787 - __main__ - INFO - - OPENAI_API_KEY: ✓ Set
+2025-07-30 21:27:56,787 - __main__ - INFO - - WEBHOOK_URL: Not set (polling mode)
+2025-07-30 21:27:56,787 - __main__ - INFO - - PORT: Default
+2025-07-30 21:27:56,787 - __main__ - INFO - Initializing speech processing pipeline...
+2025-07-30 21:27:56,787 - speech_pipeline - INFO - Creating OpenAI API-based speech pipeline...
+2025-07-30 21:27:56,817 - speech_recognizer - INFO - Initializing OpenAI API Speech Recognizer...
+2025-07-30 21:27:56,817 - speech_recognizer - INFO - Verifying OpenAI API access...
+2025-07-30 21:27:56,817 - speech_recognizer - INFO - OpenAI API Speech Recognizer initialized successfully
+2025-07-30 21:27:56,817 - speech_pipeline - INFO - OpenAI API-based speech pipeline created and initialized successfully
+2025-07-30 21:27:56,817 - __main__ - INFO - ✓ Speech processing pipeline initialized successfully
+2025-07-30 21:27:56,817 - __main__ - INFO - Initializing text processor...
+2025-07-30 21:27:56,825 - text_processor - INFO - Loaded mode: TONE (model: gpt-4o)
+2025-07-30 21:27:56,825 - text_processor - INFO - Loaded mode: DEFAULT (model: gpt-4o)
+2025-07-30 21:27:56,825 - text_processor - INFO - Loaded 2 modes: ['TONE', 'DEFAULT']
+2025-07-30 21:27:56,825 - __main__ - INFO - ✓ Text processor initialized successfully
+2025-07-30 21:27:56,825 - __main__ - INFO - === STARTUP COMPLETED SUCCESSFULLY ===
+2025-07-30 21:27:56,825 - aiogram.dispatcher - INFO - Start polling
+2025-07-30 21:28:00,605 - aiogram.dispatcher - INFO - Run polling for bot @TLDRBuddy_bot id=7665257525 - 'TL;DR Buddy'
+2025-07-30 21:28:01,774 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:28:01,774 - aiogram.dispatcher - WARNING - Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 7665257525)
+2025-07-30 21:28:07,226 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:28:07,227 - aiogram.dispatcher - WARNING - Sleep for 1.415533 seconds and try again... (tryings = 1, bot id = 7665257525)
+2025-07-30 21:28:09,002 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:28:09,002 - aiogram.dispatcher - WARNING - Sleep for 1.786169 seconds and try again... (tryings = 2, bot id = 7665257525)
+2025-07-30 21:28:14,358 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:28:14,358 - aiogram.dispatcher - WARNING - Sleep for 2.356035 seconds and try again... (tryings = 3, bot id = 7665257525)
+2025-07-30 21:28:17,156 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:28:17,157 - aiogram.dispatcher - WARNING - Sleep for 3.137552 seconds and try again... (tryings = 4, bot id = 7665257525)
+2025-07-30 21:28:20,789 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:28:20,790 - aiogram.dispatcher - WARNING - Sleep for 4.021938 seconds and try again... (tryings = 5, bot id = 7665257525)
+2025-07-30 21:28:25,549 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:28:25,550 - aiogram.dispatcher - WARNING - Sleep for 5.144198 seconds and try again... (tryings = 6, bot id = 7665257525)
+2025-07-30 21:28:31,946 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:28:31,947 - aiogram.dispatcher - WARNING - Sleep for 4.930531 seconds and try again... (tryings = 7, bot id = 7665257525)
+2025-07-30 21:28:37,271 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:28:37,272 - aiogram.dispatcher - WARNING - Sleep for 4.985070 seconds and try again... (tryings = 8, bot id = 7665257525)
+2025-07-30 21:28:43,907 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first
+2025-07-30 21:28:43,908 - aiogram.dispatcher - WARNING - Sleep for 5.032168 seconds and try again... (tryings = 9, bot id = 7665257525)
+2025-07-30 21:28:47,620 - aiogram.dispatcher - WARNING - Received SIGTERM signal
+2025-07-30 21:28:47,622 - aiogram.dispatcher - INFO - Polling stopped for bot @TLDRBuddy_bot id=7665257525 - 'TL;DR Buddy'
+2025-07-30 21:28:47,622 - aiogram.dispatcher - INFO - Polling stopped
+2025-07-30 21:28:47,878 - process_manager - INFO - Блокировка освобождена: /Users/zhuuki/Cursor/FirstProject/.bot_instance.lock
+2025-07-30 21:28:47,879 - __main__ - INFO - ✅ Process manager очищен
+2025-07-30 21:30:17,055 - __main__ - INFO - Инициализация single-instance enforcement...
+2025-07-30 21:30:17,056 - process_manager - INFO - Обработчики сигналов настроены
+2025-07-30 21:30:17,056 - process_manager - INFO - Проверка single-instance enforcement...
+2025-07-30 21:30:17,074 - process_manager - INFO - Блокировка получена: /Users/zhuuki/Cursor/FirstProject/.bot_instance.lock
+2025-07-30 21:30:17,074 - process_manager - INFO - Single-instance enforcement успешно установлен
+2025-07-30 21:30:17,074 - __main__ - INFO - ✅ Single-instance enforcement активирован
+2025-07-30 21:30:17,074 - __main__ - INFO - Starting Telegram Voice-to-Insight Pipeline Bot...
+2025-07-30 21:30:17,074 - __main__ - INFO - Configuration:
+2025-07-30 21:30:17,074 - __main__ - INFO - - Mode: Polling
+2025-07-30 21:30:17,074 - __main__ - INFO - - Port: 8000
+2025-07-30 21:30:17,074 - __main__ - INFO - - Webhook URL: 
+2025-07-30 21:30:17,074 - __main__ - INFO - 🔄 Starting in polling mode
+2025-07-30 21:30:17,075 - __main__ - INFO - === STARTUP INITIALIZATION ===
+2025-07-30 21:30:17,075 - __main__ - INFO - Environment check:
+2025-07-30 21:30:17,075 - __main__ - INFO - - TELEGRAM_TOKEN: ✓ Set
+2025-07-30 21:30:17,075 - __main__ - INFO - - OPENAI_API_KEY: ✓ Set
+2025-07-30 21:30:17,075 - __main__ - INFO - - WEBHOOK_URL: Not set (polling mode)
+2025-07-30 21:30:17,075 - __main__ - INFO - - PORT: Default
+2025-07-30 21:30:17,075 - __main__ - INFO - Initializing speech processing pipeline...
+2025-07-30 21:30:17,075 - speech_pipeline - INFO - Creating OpenAI API-based speech pipeline...
+2025-07-30 21:30:17,102 - speech_recognizer - INFO - Initializing OpenAI API Speech Recognizer...
+2025-07-30 21:30:17,102 - speech_recognizer - INFO - Verifying OpenAI API access...
+2025-07-30 21:30:17,102 - speech_recognizer - INFO - OpenAI API Speech Recognizer initialized successfully
+2025-07-30 21:30:17,102 - speech_pipeline - INFO - OpenAI API-based speech pipeline created and initialized successfully
+2025-07-30 21:30:17,102 - __main__ - INFO - ✓ Speech processing pipeline initialized successfully
+2025-07-30 21:30:17,102 - __main__ - INFO - Initializing text processor...
+2025-07-30 21:30:17,109 - text_processor - INFO - Loaded mode: TONE (model: gpt-4o)
+2025-07-30 21:30:17,109 - text_processor - INFO - Loaded mode: DEFAULT (model: gpt-4o)
+2025-07-30 21:30:17,109 - text_processor - INFO - Loaded 2 modes: ['TONE', 'DEFAULT']
+2025-07-30 21:30:17,109 - __main__ - INFO - ✓ Text processor initialized successfully
+2025-07-30 21:30:17,109 - __main__ - INFO - === STARTUP COMPLETED SUCCESSFULLY ===
+2025-07-30 21:30:17,110 - aiogram.dispatcher - INFO - Start polling
+2025-07-30 21:30:18,194 - aiogram.dispatcher - INFO - Run polling for bot @TLDRBuddy_bot id=7665257525 - 'TL;DR Buddy'
+2025-07-30 21:30:18,530 - __main__ - INFO - Received video note from user 81830450, duration: 49s, file_id: DQACAgIAAxkBAANMaIpf9dRtx5PxSzMl_BgCTGs9UCIAAkyOAAIbTlBItlJctB-tQGA2BA
+2025-07-30 21:30:18,530 - __main__ - INFO - Received video note from user 81830450, duration: 49s, file_id: DQACAgIAAxkBAANMaIpf9dRtx5PxSzMl_BgCTGs9UCIAAkyOAAIbTlBItlJctB-tQGA2BA
+2025-07-30 21:30:18,531 - __main__ - INFO - Received video note from user 81830450, duration: 49s, file_id: DQACAgIAAxkBAANMaIpf9dRtx5PxSzMl_BgCTGs9UCIAAkyOAAIbTlBItlJctB-tQGA2BA
+2025-07-30 21:30:19,655 - speech_pipeline - INFO - Starting speech pipeline for file DQACAgIAAxkBAANMaIpf9dRtx5PxSzMl_BgCTGs9UCIAAkyOAAIbTlBItlJctB-tQGA2BA, user 81830450
+2025-07-30 21:30:19,660 - speech_pipeline - INFO - Starting speech pipeline for file DQACAgIAAxkBAANMaIpf9dRtx5PxSzMl_BgCTGs9UCIAAkyOAAIbTlBItlJctB-tQGA2BA, user 81830450
+2025-07-30 21:30:19,705 - speech_pipeline - INFO - Starting speech pipeline for file DQACAgIAAxkBAANMaIpf9dRtx5PxSzMl_BgCTGs9UCIAAkyOAAIbTlBItlJctB-tQGA2BA, user 81830450
+2025-07-30 21:30:20,697 - audio_processor - INFO - Analyzed file DQACAgIAAxkBAANMaIpf9dRtx5PxSzMl_BgCTGs9UCIAAkyOAAIbTlBItlJctB-tQGA2BA: mp4, 6481586 bytes, optimal: False
+2025-07-30 21:30:20,698 - audio_processor - INFO - Analyzed file DQACAgIAAxkBAANMaIpf9dRtx5PxSzMl_BgCTGs9UCIAAkyOAAIbTlBItlJctB-tQGA2BA: mp4, 6481586 bytes, optimal: False
+2025-07-30 21:30:20,699 - audio_processor - INFO - Analyzed file DQACAgIAAxkBAANMaIpf9dRtx5PxSzMl_BgCTGs9UCIAAkyOAAIbTlBItlJctB-tQGA2BA: mp4, 6481586 bytes, optimal: False
+2025-07-30 21:30:25,945 - audio_processor - INFO - Converted 6481586 bytes for DQACAgIAAxkBAANMaIpf9dRtx5PxSzMl_BgCTGs9UCIAAkyOAAIbTlBItlJctB-tQGA2BA
+2025-07-30 21:30:25,945 - audio_processor - INFO - Audio processing completed for DQACAgIAAxkBAANMaIpf9dRtx5PxSzMl_BgCTGs9UCIAAkyOAAIbTlBItlJctB-tQGA2BA in 6.29s
+2025-07-30 21:30:25,945 - speech_pipeline - INFO - Audio processing completed in 6.29s, got 6481586 bytes
+2025-07-30 21:30:46,010 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/audio/transcriptions "HTTP/1.1 200 OK"
+2025-07-30 21:30:46,022 - speech_pipeline - INFO - Speech recognition completed in 20.08s, detected language: russian, confidence: 1.00
+2025-07-30 21:30:46,023 - speech_pipeline - INFO - Pipeline completed successfully in 26.37s total (audio: 6.29s, speech: 20.08s)
+2025-07-30 21:30:46,092 - audio_processor - INFO - Converted 6481586 bytes for DQACAgIAAxkBAANMaIpf9dRtx5PxSzMl_BgCTGs9UCIAAkyOAAIbTlBItlJctB-tQGA2BA
+2025-07-30 21:30:46,092 - audio_processor - INFO - Audio processing completed for DQACAgIAAxkBAANMaIpf9dRtx5PxSzMl_BgCTGs9UCIAAkyOAAIbTlBItlJctB-tQGA2BA in 26.39s
+2025-07-30 21:30:46,092 - speech_pipeline - INFO - Audio processing completed in 26.39s, got 6481586 bytes
+2025-07-30 21:31:08,125 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/audio/transcriptions "HTTP/1.1 200 OK"
+2025-07-30 21:31:08,130 - speech_pipeline - INFO - Speech recognition completed in 22.04s, detected language: russian, confidence: 1.00
+2025-07-30 21:31:08,130 - speech_pipeline - INFO - Pipeline completed successfully in 48.42s total (audio: 26.39s, speech: 22.04s)
+2025-07-30 21:31:08,138 - audio_processor - ERROR - Stream conversion failed for DQACAgIAAxkBAANMaIpf9dRtx5PxSzMl_BgCTGs9UCIAAkyOAAIbTlBItlJctB-tQGA2BA: 
+2025-07-30 21:31:08,138 - audio_processor - ERROR - Audio processing failed for DQACAgIAAxkBAANMaIpf9dRtx5PxSzMl_BgCTGs9UCIAAkyOAAIbTlBItlJctB-tQGA2BA: 
+2025-07-30 21:31:08,138 - speech_pipeline - ERROR - Pipeline error (audio_processing): Failed to process audio: 
+2025-07-30 21:31:08,139 - __main__ - ERROR - Video note processing error: Audio processing failed: Failed to process audio: 
+2025-07-30 21:31:09,992 - aiogram.event - INFO - Update id=702113383 is handled. Duration 51464 ms by bot id=7665257525
+2025-07-30 21:31:15,038 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-30 21:31:15,052 - text_processor - INFO - Mode TONE processed successfully
+2025-07-30 21:31:15,943 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-30 21:31:15,948 - text_processor - INFO - Mode TONE processed successfully
+2025-07-30 21:31:16,439 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-30 21:31:16,441 - text_processor - INFO - Mode DEFAULT processed successfully
+2025-07-30 21:31:16,963 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-30 21:31:16,964 - aiogram.event - INFO - Update id=702113385 is handled. Duration 58436 ms by bot id=7665257525
+2025-07-30 21:31:16,965 - text_processor - INFO - Mode DEFAULT processed successfully
+2025-07-30 21:31:17,819 - aiogram.event - INFO - Update id=702113384 is handled. Duration 59291 ms by bot id=7665257525
+2025-07-30 21:32:42,468 - aiogram.dispatcher - WARNING - Received SIGTERM signal
+2025-07-30 21:32:42,470 - aiogram.dispatcher - INFO - Polling stopped for bot @TLDRBuddy_bot id=7665257525 - 'TL;DR Buddy'
+2025-07-30 21:32:42,471 - aiogram.dispatcher - INFO - Polling stopped
+2025-07-30 21:32:42,726 - process_manager - INFO - Блокировка освобождена: /Users/zhuuki/Cursor/FirstProject/.bot_instance.lock
+2025-07-30 21:32:42,726 - __main__ - INFO - ✅ Process manager очищен
