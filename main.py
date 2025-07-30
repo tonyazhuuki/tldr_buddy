@@ -601,3 +601,5 @@ if __name__ == "__main__":
                 logger.info("✅ Process manager очищен")
             except Exception as e:
                 logger.error(f"Ошибка при очистке process manager: {e}") 
+
+# Force Railway redeploy - 2025-07-30 21:42 
