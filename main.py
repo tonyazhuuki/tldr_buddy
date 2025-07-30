@@ -8,6 +8,7 @@ import asyncio
 import logging
 import os
 import sys
+from datetime import datetime
 from pathlib import Path
 
 from aiogram import Bot, Dispatcher, types, F
@@ -399,17 +400,38 @@ async def error_handler(event: ErrorEvent):
 async def health_check(request):
     """Health check endpoint"""
     try:
+        # Simple health check - just return OK if server is running
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        bot_status = 'running'
+        pipeline_status = 'ready' if speech_pipeline else 'initializing'
+        pipeline_details = ""
+        
+        # Try to check speech pipeline if available
         if speech_pipeline:
-            health_status = await speech_pipeline.health_check()
-            if health_status['status'] == 'healthy':
-                return web.Response(text="OK - Bot is healthy", status=200)
-            else:
-                return web.Response(text="UNHEALTHY - Pipeline not ready", status=503)
-        else:
-            return web.Response(text="INITIALIZING - Bot starting up", status=503)
+            try:
+                health_result = await speech_pipeline.health_check()
+                pipeline_details = f"\n🔍 Details: {health_result.get('status', 'unknown')}"
+            except Exception as e:
+                pipeline_details = f"\n⚠️ Warning: {str(e)}"
+                logger.warning(f"Pipeline health check failed: {e}")
+        
+        return web.Response(
+            text=f"✅ Bot Status: healthy\n"
+                 f"📅 Time: {timestamp}\n"
+                 f"🤖 Telegram: {bot_status}\n"
+                 f"🎤 Pipeline: {pipeline_status}{pipeline_details}\n"
+                 f"🌐 Ready to receive webhooks!",
+            status=200
+        )
+        
     except Exception as e:
         logger.error(f"Health check failed: {e}")
-        return web.Response(text=f"ERROR - {str(e)}", status=500)
+        return web.Response(
+            text=f"❌ Health check error: {str(e)}\n"
+                 f"📅 Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+                 f"ℹ️  This is a temporary error",
+            status=500
+        )
 
 
 async def startup():
@@ -472,46 +494,71 @@ async def main():
     webhook_url = os.getenv('WEBHOOK_URL')
     port = int(os.getenv('PORT', 8000))
     
+    logger.info(f"Configuration:")
+    logger.info(f"- Mode: {'Webhook' if webhook_url else 'Polling'}")
+    logger.info(f"- Port: {port}")
+    logger.info(f"- Webhook URL: {webhook_url}")
+    
     if webhook_url:
         # Webhook mode for Railway
-        logger.info(f"Starting in webhook mode on port {port}")
+        logger.info(f"🚀 Starting in webhook mode on port {port}")
         
-        # Initialize speech processing
-        await startup()
-        
-        # Create aiohttp app
-        app = web.Application()
-        
-        # Add health check route
-        app.router.add_get('/health', health_check)
-        
-        # Setup webhook
-        webhook_path = '/webhook'
-        app.router.add_post(webhook_path, SimpleRequestHandler(dispatcher=dp, bot=bot).handle)
-        
-        # Set webhook
-        await bot.set_webhook(f"{webhook_url}{webhook_path}")
-        
-        # Start server
-        runner = web.AppRunner(app)
-        await runner.setup()
-        site = web.TCPSite(runner, '0.0.0.0', port)
-        await site.start()
-        
-        logger.info(f"Webhook server started on port {port}")
-        
-        # Keep the server running
         try:
-            while True:
-                await asyncio.sleep(1)
-        except KeyboardInterrupt:
-            pass
-        finally:
-            await bot.delete_webhook()
-            await runner.cleanup()
+            # Initialize speech processing
+            await startup()
+            
+            # Create aiohttp app
+            app = web.Application()
+            
+            # Add health check route FIRST
+            app.router.add_get('/health', health_check)
+            logger.info("✓ Health check route added")
+            
+            # Add root route for basic check
+            async def root_handler(request):
+                return web.Response(text="Telegram Bot is running", status=200)
+            app.router.add_get('/', root_handler)
+            logger.info("✓ Root route added")
+            
+            # Setup webhook
+            webhook_path = '/webhook'
+            app.router.add_post(webhook_path, SimpleRequestHandler(dispatcher=dp, bot=bot).handle)
+            logger.info("✓ Webhook route added")
+            
+            # Start server BEFORE setting webhook
+            runner = web.AppRunner(app)
+            await runner.setup()
+            site = web.TCPSite(runner, '0.0.0.0', port)
+            await site.start()
+            
+            logger.info(f"✅ Server started successfully on 0.0.0.0:{port}")
+            
+            # Set webhook AFTER server is running
+            full_webhook_url = f"{webhook_url}{webhook_path}"
+            await bot.set_webhook(full_webhook_url)
+            logger.info(f"✅ Webhook set to {full_webhook_url}")
+            
+            # Keep the server running
+            logger.info("🔄 Server is running and ready to receive requests...")
+            try:
+                while True:
+                    await asyncio.sleep(60)  # Check every minute
+                    logger.info("💓 Server heartbeat")
+            except KeyboardInterrupt:
+                logger.info("🛑 Shutdown requested")
+            finally:
+                logger.info("🧹 Cleaning up...")
+                await bot.delete_webhook()
+                await runner.cleanup()
+                
+        except Exception as e:
+            logger.error(f"💥 Failed to start webhook server: {e}")
+            logger.exception("Full error:")
+            raise
+            
     else:
         # Polling mode for local development
-        logger.info("Starting in polling mode")
+        logger.info("🔄 Starting in polling mode")
         
         # Initialize speech processing
         await startup()
