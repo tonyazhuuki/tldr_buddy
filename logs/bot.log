@@ -5130,3 +5130,69 @@
 2025-07-30 21:38:45,138 - aiogram.dispatcher - INFO - Polling stopped
 2025-07-30 21:38:45,394 - process_manager - INFO - Блокировка освобождена: /Users/zhuuki/Cursor/FirstProject/.bot_instance.lock
 2025-07-30 21:38:45,394 - __main__ - INFO - ✅ Process manager очищен
+2025-07-30 21:48:36,749 - __main__ - INFO - Инициализация single-instance enforcement...
+2025-07-30 21:48:36,750 - process_manager - INFO - Обработчики сигналов настроены
+2025-07-30 21:48:36,750 - process_manager - INFO - Проверка single-instance enforcement...
+2025-07-30 21:48:36,781 - process_manager - INFO - Блокировка получена: /Users/zhuuki/Cursor/FirstProject/.bot_instance.lock
+2025-07-30 21:48:36,781 - process_manager - INFO - Single-instance enforcement успешно установлен
+2025-07-30 21:48:36,781 - __main__ - INFO - ✅ Single-instance enforcement активирован
+2025-07-30 21:48:36,781 - __main__ - INFO - Starting Telegram Voice-to-Insight Pipeline Bot...
+2025-07-30 21:48:36,781 - __main__ - INFO - Configuration:
+2025-07-30 21:48:36,781 - __main__ - INFO - - Mode: Polling
+2025-07-30 21:48:36,781 - __main__ - INFO - - Port: 8000
+2025-07-30 21:48:36,781 - __main__ - INFO - - Webhook URL: 
+2025-07-30 21:48:36,781 - __main__ - INFO - 🔄 Starting in polling mode
+2025-07-30 21:48:36,781 - __main__ - INFO - === STARTUP INITIALIZATION ===
+2025-07-30 21:48:36,781 - __main__ - INFO - Environment check:
+2025-07-30 21:48:36,781 - __main__ - INFO - - TELEGRAM_TOKEN: ✓ Set
+2025-07-30 21:48:36,781 - __main__ - INFO - - OPENAI_API_KEY: ✓ Set
+2025-07-30 21:48:36,781 - __main__ - INFO - - WEBHOOK_URL: Not set (polling mode)
+2025-07-30 21:48:36,781 - __main__ - INFO - - PORT: Default
+2025-07-30 21:48:36,781 - __main__ - INFO - Initializing speech processing pipeline...
+2025-07-30 21:48:36,781 - speech_pipeline - INFO - Creating OpenAI API-based speech pipeline...
+2025-07-30 21:48:36,809 - speech_recognizer - INFO - Initializing OpenAI API Speech Recognizer...
+2025-07-30 21:48:36,809 - speech_recognizer - INFO - Verifying OpenAI API access...
+2025-07-30 21:48:36,809 - speech_recognizer - INFO - OpenAI API Speech Recognizer initialized successfully
+2025-07-30 21:48:36,809 - speech_pipeline - INFO - OpenAI API-based speech pipeline created and initialized successfully
+2025-07-30 21:48:36,810 - __main__ - INFO - ✓ Speech processing pipeline initialized successfully
+2025-07-30 21:48:36,810 - __main__ - INFO - Initializing text processor...
+2025-07-30 21:48:36,816 - text_processor - INFO - Loaded mode: TONE (model: gpt-4o)
+2025-07-30 21:48:36,816 - text_processor - INFO - Loaded mode: DEFAULT (model: gpt-4o)
+2025-07-30 21:48:36,816 - text_processor - INFO - Loaded 2 modes: ['TONE', 'DEFAULT']
+2025-07-30 21:48:36,817 - __main__ - INFO - ✓ Text processor initialized successfully
+2025-07-30 21:48:36,817 - __main__ - INFO - === STARTUP COMPLETED SUCCESSFULLY ===
+2025-07-30 21:48:36,817 - aiogram.dispatcher - INFO - Start polling
+2025-07-30 21:48:38,549 - aiogram.dispatcher - INFO - Run polling for bot @TLDRBuddy_bot id=7665257525 - 'TL;DR Buddy'
+2025-07-30 21:48:38,954 - __main__ - INFO - Received voice message from user 81830450, duration: 17s, file_id: AwACAgIAAxkBAANUaIpnIJi84OOEx1LbTtSIAblX5ZcAAvF9AALQchlIxgO4H8luLmo2BA
+2025-07-30 21:48:38,955 - __main__ - INFO - Received voice message from user 81830450, duration: 17s, file_id: AwACAgIAAxkBAANUaIpnIJi84OOEx1LbTtSIAblX5ZcAAvF9AALQchlIxgO4H8luLmo2BA
+2025-07-30 21:48:40,429 - speech_pipeline - INFO - Starting speech pipeline for file AwACAgIAAxkBAANUaIpnIJi84OOEx1LbTtSIAblX5ZcAAvF9AALQchlIxgO4H8luLmo2BA, user 81830450
+2025-07-30 21:48:40,430 - speech_pipeline - INFO - Starting speech pipeline for file AwACAgIAAxkBAANUaIpnIJi84OOEx1LbTtSIAblX5ZcAAvF9AALQchlIxgO4H8luLmo2BA, user 81830450
+2025-07-30 21:48:41,029 - audio_processor - INFO - Analyzed file AwACAgIAAxkBAANUaIpnIJi84OOEx1LbTtSIAblX5ZcAAvF9AALQchlIxgO4H8luLmo2BA: oga, 359312 bytes, optimal: True
+2025-07-30 21:48:41,030 - audio_processor - INFO - Analyzed file AwACAgIAAxkBAANUaIpnIJi84OOEx1LbTtSIAblX5ZcAAvF9AALQchlIxgO4H8luLmo2BA: oga, 359312 bytes, optimal: True
+2025-07-30 21:48:42,476 - audio_processor - INFO - Downloaded 359312 bytes for AwACAgIAAxkBAANUaIpnIJi84OOEx1LbTtSIAblX5ZcAAvF9AALQchlIxgO4H8luLmo2BA
+2025-07-30 21:48:42,476 - audio_processor - INFO - Audio processing completed for AwACAgIAAxkBAANUaIpnIJi84OOEx1LbTtSIAblX5ZcAAvF9AALQchlIxgO4H8luLmo2BA in 2.05s
+2025-07-30 21:48:42,477 - speech_pipeline - INFO - Audio processing completed in 2.05s, got 359312 bytes
+2025-07-30 21:48:49,161 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/audio/transcriptions "HTTP/1.1 200 OK"
+2025-07-30 21:48:49,170 - speech_pipeline - INFO - Speech recognition completed in 6.69s, detected language: russian, confidence: 1.00
+2025-07-30 21:48:49,170 - speech_pipeline - INFO - Pipeline completed successfully in 8.74s total (audio: 2.05s, speech: 6.69s)
+2025-07-30 21:48:49,172 - audio_processor - INFO - Downloaded 359312 bytes for AwACAgIAAxkBAANUaIpnIJi84OOEx1LbTtSIAblX5ZcAAvF9AALQchlIxgO4H8luLmo2BA
+2025-07-30 21:48:49,172 - audio_processor - INFO - Audio processing completed for AwACAgIAAxkBAANUaIpnIJi84OOEx1LbTtSIAblX5ZcAAvF9AALQchlIxgO4H8luLmo2BA in 8.74s
+2025-07-30 21:48:49,177 - speech_pipeline - INFO - Audio processing completed in 8.75s, got 359312 bytes
+2025-07-30 21:48:55,887 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/audio/transcriptions "HTTP/1.1 200 OK"
+2025-07-30 21:48:55,888 - speech_pipeline - INFO - Speech recognition completed in 6.71s, detected language: russian, confidence: 1.00
+2025-07-30 21:48:55,888 - speech_pipeline - INFO - Pipeline completed successfully in 15.46s total (audio: 8.75s, speech: 6.71s)
+2025-07-30 21:48:59,109 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-30 21:48:59,120 - text_processor - INFO - Mode DEFAULT processed successfully
+2025-07-30 21:48:59,250 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-30 21:48:59,252 - text_processor - INFO - Mode TONE processed successfully
+2025-07-30 21:48:59,819 - aiogram.event - INFO - Update id=702113387 is handled. Duration 20865 ms by bot id=7665257525
+2025-07-30 21:49:00,836 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-30 21:49:00,838 - text_processor - INFO - Mode TONE processed successfully
+2025-07-30 21:49:01,475 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-30 21:49:01,476 - text_processor - INFO - Mode DEFAULT processed successfully
+2025-07-30 21:49:01,925 - aiogram.event - INFO - Update id=702113388 is handled. Duration 22971 ms by bot id=7665257525
+2025-07-30 21:49:55,720 - aiogram.dispatcher - WARNING - Received SIGTERM signal
+2025-07-30 21:49:55,722 - aiogram.dispatcher - INFO - Polling stopped for bot @TLDRBuddy_bot id=7665257525 - 'TL;DR Buddy'
+2025-07-30 21:49:55,722 - aiogram.dispatcher - INFO - Polling stopped
+2025-07-30 21:49:55,979 - process_manager - INFO - Блокировка освобождена: /Users/zhuuki/Cursor/FirstProject/.bot_instance.lock
+2025-07-30 21:49:55,979 - __main__ - INFO - ✅ Process manager очищен
