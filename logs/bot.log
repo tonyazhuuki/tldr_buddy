@@ -4732,3 +4732,30 @@
 2025-07-30 12:14:42,297 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - Request timeout error
 2025-07-30 12:14:42,300 - aiogram.dispatcher - WARNING - Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 7665257525)
 2025-07-30 12:14:54,320 - aiogram.dispatcher - INFO - Connection established (tryings = 1, bot id = 7665257525)
+2025-07-30 15:07:26,199 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - Request timeout error
+2025-07-30 15:07:26,206 - aiogram.dispatcher - WARNING - Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 7665257525)
+2025-07-30 15:24:14,239 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [None]
+2025-07-30 15:24:14,239 - aiogram.dispatcher - WARNING - Sleep for 1.176625 seconds and try again... (tryings = 1, bot id = 7665257525)
+2025-07-30 15:24:16,626 - aiogram.dispatcher - INFO - Connection established (tryings = 2, bot id = 7665257525)
+2025-07-30 15:24:16,640 - __main__ - INFO - Received video note from user 81830450, duration: 60s, file_id: DQACAgIAAxkBAANIaIoLgK3jUAZilHKYGnUfJuJN8MAAAkWOAAIbTlBIFSdBA5ZNBuo2BA
+2025-07-30 15:24:18,028 - speech_pipeline - INFO - Starting speech pipeline for file DQACAgIAAxkBAANIaIoLgK3jUAZilHKYGnUfJuJN8MAAAkWOAAIbTlBIFSdBA5ZNBuo2BA, user 81830450
+2025-07-30 15:24:19,046 - audio_processor - INFO - Analyzed file DQACAgIAAxkBAANIaIoLgK3jUAZilHKYGnUfJuJN8MAAAkWOAAIbTlBIFSdBA5ZNBuo2BA: mp4, 8023692 bytes, optimal: False
+2025-07-30 15:24:22,181 - audio_processor - INFO - Converted 8023692 bytes for DQACAgIAAxkBAANIaIoLgK3jUAZilHKYGnUfJuJN8MAAAkWOAAIbTlBIFSdBA5ZNBuo2BA
+2025-07-30 15:24:22,181 - audio_processor - INFO - Audio processing completed for DQACAgIAAxkBAANIaIoLgK3jUAZilHKYGnUfJuJN8MAAAkWOAAIbTlBIFSdBA5ZNBuo2BA in 4.15s
+2025-07-30 15:24:22,181 - speech_pipeline - INFO - Audio processing completed in 4.15s, got 8023692 bytes
+2025-07-30 15:24:51,936 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/audio/transcriptions "HTTP/1.1 200 OK"
+2025-07-30 15:24:51,946 - speech_pipeline - INFO - Speech recognition completed in 29.76s, detected language: russian, confidence: 1.00
+2025-07-30 15:24:51,947 - speech_pipeline - INFO - Pipeline completed successfully in 33.92s total (audio: 4.15s, speech: 29.76s)
+2025-07-30 15:24:57,249 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-30 15:24:57,254 - text_processor - INFO - Mode DEFAULT processed successfully
+2025-07-30 15:25:01,070 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-30 15:25:01,077 - text_processor - INFO - Mode TONE processed successfully
+2025-07-30 15:25:01,546 - aiogram.event - INFO - Update id=702113381 is handled. Duration 44917 ms by bot id=7665257525
+2025-07-30 19:20:27,778 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - Request timeout error
+2025-07-30 19:20:27,785 - aiogram.dispatcher - WARNING - Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 7665257525)
+2025-07-30 19:21:39,772 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - Request timeout error
+2025-07-30 19:21:39,774 - aiogram.dispatcher - WARNING - Sleep for 1.258329 seconds and try again... (tryings = 1, bot id = 7665257525)
+2025-07-30 19:21:51,330 - aiogram.dispatcher - INFO - Connection established (tryings = 2, bot id = 7665257525)
+2025-07-30 20:33:51,150 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - Request timeout error
+2025-07-30 20:33:51,152 - aiogram.dispatcher - WARNING - Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 7665257525)
+2025-07-30 20:34:04,242 - aiogram.dispatcher - INFO - Connection established (tryings = 1, bot id = 7665257525)

@@ -402,14 +402,14 @@ async def health_check(request):
         if speech_pipeline:
             health_status = await speech_pipeline.health_check()
             if health_status['status'] == 'healthy':
-                return web.Response(text="OK", status=200)
+                return web.Response(text="OK - Bot is healthy", status=200)
             else:
-                return web.Response(text="UNHEALTHY", status=503)
+                return web.Response(text="UNHEALTHY - Pipeline not ready", status=503)
         else:
-            return web.Response(text="INITIALIZING", status=503)
+            return web.Response(text="INITIALIZING - Bot starting up", status=503)
     except Exception as e:
         logger.error(f"Health check failed: {e}")
-        return web.Response(text="ERROR", status=500)
+        return web.Response(text=f"ERROR - {str(e)}", status=500)
 
 
 async def startup():
@@ -417,24 +417,40 @@ async def startup():
     global speech_pipeline, text_processor
     
     try:
-        logger.info("Initializing speech processing pipeline...")
+        logger.info("=== STARTUP INITIALIZATION ===")
         
-        # Create speech pipeline (this will load the Whisper model)
-        speech_pipeline = await SpeechPipelineFactory.create_pipeline(bot)
-        
-        logger.info("Speech processing pipeline initialized successfully")
-        
-        # Initialize text processor
-        logger.info("Initializing text processor...")
+        # Check environment variables
+        telegram_token = os.getenv("TELEGRAM_TOKEN")
         openai_api_key = os.getenv("OPENAI_API_KEY")
+        webhook_url = os.getenv("WEBHOOK_URL")
+        port = os.getenv("PORT")
+        
+        logger.info(f"Environment check:")
+        logger.info(f"- TELEGRAM_TOKEN: {'✓ Set' if telegram_token else '✗ Missing'}")
+        logger.info(f"- OPENAI_API_KEY: {'✓ Set' if openai_api_key else '✗ Missing'}")
+        logger.info(f"- WEBHOOK_URL: {webhook_url if webhook_url else 'Not set (polling mode)'}")
+        logger.info(f"- PORT: {port if port else 'Default'}")
+        
         if not openai_api_key:
             raise ValueError("OPENAI_API_KEY not found in environment variables")
         
+        logger.info("Initializing speech processing pipeline...")
+        
+        # Create speech pipeline (this will load the Whisper model)
+        speech_pipeline = await SpeechPipelineFactory.create_pipeline(bot, redis_client=None)
+        
+        logger.info("✓ Speech processing pipeline initialized successfully")
+        
+        # Initialize text processor
+        logger.info("Initializing text processor...")
         text_processor = TextProcessor(openai_api_key)
-        logger.info("Text processor initialized successfully")
+        logger.info("✓ Text processor initialized successfully")
+        
+        logger.info("=== STARTUP COMPLETED SUCCESSFULLY ===")
         
     except Exception as e:
-        logger.error(f"Failed to initialize speech pipeline: {e}")
+        logger.error(f"✗ Failed to initialize: {e}")
+        logger.exception("Full error details:")
         logger.error("Bot will start but speech processing will be unavailable")
 
 
