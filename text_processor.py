@@ -284,12 +284,16 @@ class TextProcessor:
                 if not line:
                     continue
                     
-                if line.startswith('СКРЫТЫЕ НАМЕРЕНИЯ:'):
-                    tone_data['hidden_intent'] = line.replace('СКРЫТЫЕ НАМЕРЕНИЯ:', '').strip()
-                elif line.startswith('ДОМИНИРУЮЩАЯ ЭМОЦИЯ:'):
-                    tone_data['dominant_emotion'] = line.replace('ДОМИНИРУЮЩАЯ ЭМОЦИЯ:', '').strip()
-                elif line.startswith('СТИЛЬ ВЗАИМОДЕЙСТВИЯ:'):
-                    tone_data['interaction_style'] = line.replace('СТИЛЬ ВЗАИМОДЕЙСТВИЯ:', '').strip()
+                # Support both old and new formats for backward compatibility
+                if line.startswith('🎯 СКРЫТЫЕ НАМЕРЕНИЯ:') or line.startswith('СКРЫТЫЕ НАМЕРЕНИЯ:'):
+                    intent_text = line.replace('🎯 СКРЫТЫЕ НАМЕРЕНИЯ:', '').replace('СКРЫТЫЕ НАМЕРЕНИЯ:', '').strip()
+                    tone_data['hidden_intent'] = intent_text
+                elif line.startswith('😄 ДОМИНИРУЮЩАЯ ЭМОЦИЯ:') or line.startswith('ДОМИНИРУЮЩАЯ ЭМОЦИЯ:'):
+                    emotion_text = line.replace('😄 ДОМИНИРУЮЩАЯ ЭМОЦИЯ:', '').replace('ДОМИНИРУЮЩАЯ ЭМОЦИЯ:', '').strip()
+                    tone_data['dominant_emotion'] = emotion_text
+                elif line.startswith('💬 СТИЛЬ ВЗАИМОДЕЙСТВИЯ:') or line.startswith('СТИЛЬ ВЗАИМОДЕЙСТВИЯ:'):
+                    style_text = line.replace('💬 СТИЛЬ ВЗАИМОДЕЙСТВИЯ:', '').replace('СТИЛЬ ВЗАИМОДЕЙСТВИЯ:', '').strip()
+                    tone_data['interaction_style'] = style_text
             
             return tone_data if tone_data else None
             
@@ -317,19 +321,19 @@ class TextProcessor:
         if result.actions and result.actions.lower() != 'нет' and result.actions.strip():
             output_parts.append(f"👉 **Действия**: {result.actions}")
         
-        # Tone analysis
+        # Tone analysis with structured format
         if result.tone_analysis:
-            tone_parts = []
+            tone_lines = []
             if result.tone_analysis.get('hidden_intent'):
-                tone_parts.append(f"намерения: {result.tone_analysis['hidden_intent']}")
+                tone_lines.append(f"  🎯 **Намерения**: {result.tone_analysis['hidden_intent']}")
             if result.tone_analysis.get('dominant_emotion'):
-                tone_parts.append(f"эмоция: {result.tone_analysis['dominant_emotion']}")
+                tone_lines.append(f"  😄 **Эмоция**: {result.tone_analysis['dominant_emotion']}")
             if result.tone_analysis.get('interaction_style'):
-                tone_parts.append(f"стиль: {result.tone_analysis['interaction_style']}")
+                tone_lines.append(f"  💬 **Стиль**: {result.tone_analysis['interaction_style']}")
             
-            if tone_parts:
-                tone_text = ", ".join(tone_parts)
-                output_parts.append(f"🎭 **Тон**: {tone_text}")
+            if tone_lines:
+                tone_text = "\n".join(tone_lines)
+                output_parts.append(f"🎭 **Психологический анализ**:\n{tone_text}")
         
         # Processing time
         if result.processing_time:
