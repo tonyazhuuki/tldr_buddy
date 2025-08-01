@@ -9,6 +9,9 @@ openai==1.96.1
 # Environment Management
 python-dotenv==1.1.1
 
+# Caching & Storage
+redis==6.2.0
+
 # Data Validation
 pydantic==2.8.0
 
