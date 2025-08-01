@@ -25,9 +25,10 @@ from speech_pipeline import SpeechPipelineFactory, SpeechPipelineError
 from text_processor import TextProcessor
 
 # Import enhanced systems for Phase 3
-import redis.asyncio as redis
-from button_ui_manager import ButtonUIManager, create_button_ui_manager
-from archetype_system import ArchetypeSystem, create_archetype_system
+# Temporarily disabled for deployment fix
+# import redis.asyncio as redis
+# from button_ui_manager import ButtonUIManager, create_button_ui_manager
+# from archetype_system import ArchetypeSystem, create_archetype_system
 
 # Import process management for single-instance enforcement
 from process_manager import enforce_single_instance
@@ -224,20 +225,21 @@ async def handle_voice_message(message: Message):
                     
                     # Add enhanced button UI if available
                     reply_markup = None
-                    if button_ui_manager is not None and processing_result.emotion_scores:
-                        try:
-                            reply_markup = await button_ui_manager.create_initial_buttons(
-                                user_id=int(user_id),
-                                message_id=processing_msg.message_id,
-                                emotion_scores=processing_result.emotion_scores,
-                                emotion_levels=processing_result.emotion_levels or {},
-                                original_text=transcribed_text,
-                                transcript_available=True,
-                                transcript_file_id=file_id
-                            )
-                        except Exception as button_error:
-                            logger.warning(f"Button UI creation failed: {button_error}")
-                            reply_markup = None
+                    # Temporarily disabled for deployment fix
+                    # if button_ui_manager is not None and processing_result.emotion_scores:
+                    #     try:
+                    #         reply_markup = await button_ui_manager.create_initial_buttons(
+                    #             user_id=int(user_id),
+                    #             message_id=processing_msg.message_id,
+                    #             emotion_scores=processing_result.emotion_scores,
+                    #             emotion_levels=processing_result.emotion_levels or {},
+                    #             original_text=transcribed_text,
+                    #             transcript_available=True,
+                    #             transcript_file_id=file_id
+                    #         )
+                    #     except Exception as button_error:
+                    #         logger.warning(f"Button UI creation failed: {button_error}")
+                    #         reply_markup = None
                     
                     # Edit the processing message with final result and buttons
                     await processing_msg.edit_text(formatted_output, reply_markup=reply_markup, parse_mode="Markdown")
@@ -409,20 +411,21 @@ async def handle_text_message(message: Message):
                 
                 # Add enhanced button UI if available
                 reply_markup = None
-                if button_ui_manager is not None and processing_result.emotion_scores:
-                    try:
-                        reply_markup = await button_ui_manager.create_initial_buttons(
-                            user_id=int(user_id),
-                            message_id=processing_msg.message_id,
-                            emotion_scores=processing_result.emotion_scores,
-                            emotion_levels=processing_result.emotion_levels or {},
-                            original_text=text_content,
-                            transcript_available=False,
-                            transcript_file_id=None
-                        )
-                    except Exception as button_error:
-                        logger.warning(f"Button UI creation failed: {button_error}")
-                        reply_markup = None
+                # Temporarily disabled for deployment fix
+                # if button_ui_manager is not None and processing_result.emotion_scores:
+                #     try:
+                #         reply_markup = await button_ui_manager.create_initial_buttons(
+                #             user_id=int(user_id),
+                #             message_id=processing_msg.message_id,
+                #             emotion_scores=processing_result.emotion_scores,
+                #             emotion_levels=processing_result.emotion_levels or {},
+                #             original_text=text_content,
+                #             transcript_available=False,
+                #             transcript_file_id=None
+                #         )
+                #     except Exception as button_error:
+                #         logger.warning(f"Button UI creation failed: {button_error}")
+                #         reply_markup = None
                 
                 # Edit the processing message with final result and buttons
                 await processing_msg.edit_text(formatted_output, reply_markup=reply_markup, parse_mode="Markdown")
@@ -498,14 +501,15 @@ from aiogram.types import CallbackQuery
 @dp.callback_query()
 async def handle_button_callback(callback_query: CallbackQuery):
     """Handle button callbacks for enhanced UI"""
+    # Temporarily disabled for deployment fix
     try:
-        if button_ui_manager is not None:
-            await button_ui_manager.handle_callback(callback_query, bot)
-        else:
-            await callback_query.answer("❌ Button UI not available", show_alert=True)
+        # if button_ui_manager is not None:
+        #     await button_ui_manager.handle_callback(callback_query, bot)
+        # else:
+        await callback_query.answer("❌ Enhanced features temporarily disabled", show_alert=True)
     except Exception as e:
         logger.error(f"Error handling button callback: {e}")
-        await callback_query.answer("❌ Ошибка обработки", show_alert=True)
+        await callback_query.answer("❌ Error processing button", show_alert=True)
 
 
 @dp.error()
@@ -587,43 +591,44 @@ async def startup():
         logger.info("✓ Text processor initialized successfully")
         
         # Initialize enhanced systems (Phase 3)
-        logger.info("Initializing enhanced systems...")
+        # Temporarily disabled for deployment fix
+        logger.info("Enhanced features temporarily disabled for deployment fix")
         
         # Initialize Redis client
-        redis_host = os.getenv("REDIS_HOST", "localhost")
-        redis_port = int(os.getenv("REDIS_PORT", "6379"))
-        redis_password = os.getenv("REDIS_PASSWORD")
+        # redis_host = os.getenv("REDIS_HOST", "localhost")
+        # redis_port = int(os.getenv("REDIS_PORT", "6379"))
+        # redis_password = os.getenv("REDIS_PASSWORD")
         
-        try:
-            redis_client = redis.Redis(
-                host=redis_host,
-                port=redis_port, 
-                password=redis_password,
-                decode_responses=True
-            )
-            # Test connection
-            await redis_client.ping()
-            logger.info("✓ Redis client initialized and connected")
-        except Exception as redis_error:
-            logger.warning(f"Redis connection failed: {redis_error}")
-            logger.warning("Enhanced UI features will be disabled")
-            redis_client = None
+        # try:
+        #     redis_client = redis.Redis(
+        #         host=redis_host,
+        #         port=redis_port, 
+        #         password=redis_password,
+        #         decode_responses=True
+        #     )
+        #     # Test connection
+        #     await redis_client.ping()
+        #     logger.info("✓ Redis client initialized and connected")
+        # except Exception as redis_error:
+        #     logger.warning(f"Redis connection failed: {redis_error}")
+        #     logger.warning("Enhanced UI features will be disabled")
+        redis_client = None
         
         # Initialize archetype system
-        if text_processor and text_processor.client:
-            archetype_system = create_archetype_system(text_processor.client)
-            logger.info("✓ Archetype system initialized")
-        else:
-            archetype_system = None
-            logger.warning("Archetype system disabled (no OpenAI client)")
+        # if text_processor and text_processor.client:
+        #     archetype_system = create_archetype_system(text_processor.client)
+        #     logger.info("✓ Archetype system initialized")
+        # else:
+        archetype_system = None
+        #     logger.warning("Archetype system disabled (no OpenAI client)")
         
         # Initialize button UI manager
-        if redis_client and archetype_system:
-            button_ui_manager = create_button_ui_manager(redis_client, archetype_system)
-            logger.info("✓ Button UI manager initialized")
-        else:
-            button_ui_manager = None
-            logger.warning("Button UI disabled (missing Redis or archetype system)")
+        # if redis_client and archetype_system:
+        #     button_ui_manager = create_button_ui_manager(redis_client, archetype_system)
+        #     logger.info("✓ Button UI manager initialized")
+        # else:
+        button_ui_manager = None
+        #     logger.warning("Button UI disabled (missing Redis or archetype system)")
         
         logger.info("=== STARTUP COMPLETED SUCCESSFULLY ===")
         
