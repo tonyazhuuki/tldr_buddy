@@ -600,9 +600,356 @@ The missing text processor has been successfully implemented with full ТЗ comp
 
 ---
 
+## CURRENT TASK: TELEGRAM BOT COMPREHENSIVE UPGRADE ⚠️ LEVEL 3
 
+**Статус**: 🚀 VAN MODE ANALYSIS - COMPLEXITY DETERMINATION  
+**Start Date**: January 16, 2025  
+**Complexity Level**: Level 3 (Intermediate Feature) - PROVISIONAL  
+**Type**: Comprehensive Feature Enhancement  
+**User Request**: "Telegram bot upgrade with emotion detection, archetype responses, and enhanced content processing"
 
-## CURRENT TASK: READY FOR NEW TASK ASSIGNMENT
+### 🎯 TASK OBJECTIVE
+Implement a comprehensive upgrade to the existing Telegram voice-to-insight pipeline adding:
+- **Emotion Detection System**: Сарказм, токсичность, манипуляция analysis
+- **Archetype Response System**: EMPATH, META-SAGE, TRICKSTER, CRAZY-WISDOM response styles
+- **Enhanced Content Processing**: Text messages, forwards, quotes in addition to voice/video
+- **Advanced User Interface**: Кнопочная система с советами и транскриптами
+- **Content Management**: 24-hour storage with automatic cleanup
+
+### 🔍 VAN MODE ANALYSIS - COMPLEXITY DETERMINATION
+
+#### 📊 COMPLEXITY ASSESSMENT FACTORS
+
+**Content Types Expansion**:
+- ✅ Current: Voice/video messages only
+- 🆕 New: + Text messages, forwards, quotes
+- 📈 Impact: Medium - extends existing pipeline
+
+**Detection Systems Implementation**:
+- 🆕 Unified emotion detection via GPT-4o (сарказм, токсичность, манипуляция)
+- 🆕 Parallel processing with existing DEFAULT/TONE modes
+- 📈 Impact: Medium - leverages existing GPT-4o integration pattern
+
+**Response Architecture Overhaul**:
+- 🆕 Four archetype response styles
+- 🆕 Dynamic archetype selection based on analysis
+- 🆕 Button-based user interface system
+- 📈 Impact: High - fundamental UX change
+
+**Storage & Management**:
+- 🆕 24-hour file retention system
+- 🆕 Context memory (30 replies / 5 minutes)
+- 🆕 Automatic cleanup processes
+- 📈 Impact: Medium - operational enhancement
+
+#### ⚖️ COMPLEXITY LEVEL DETERMINATION
+
+**Scope Analysis**:
+- Enhanced content processing (text + voice/video)
+- Unified emotion detection via existing GPT-4o pattern
+- New archetype response system with button UI
+- Storage and context management features
+
+**Risk Assessment**:
+- GPT-4o integration (already proven in existing system)
+- Performance requirements (≤0.3s detection overhead via single API call)
+- Button interface and state management complexity
+- File retention and cleanup automation
+
+**Implementation Effort**:
+- Estimated 6-8 hours total development (reduced from 8-12)
+- Moderate file modifications required
+- New components: emotion analyzer (GPT-4o), archetype system, button handlers
+- Testing across different content types
+
+**🔄 COMPLEXITY LEVEL REASSESSMENT: LEVEL 2-3 BOUNDARY**
+With unified GPT-4o emotion detection, this could potentially be Level 2 (Simple Enhancement) rather than Level 3, depending on final architectural decisions.
+
+### 🚨 MANDATORY MODE TRANSITION
+
+**VAN Mode Analysis Complete** ✅  
+**Next Required Mode**: PLAN MODE
+
+Per Level 3 workflow requirements, this task MUST proceed through:
+1. **PLAN Mode**: Comprehensive feature planning
+2. **CREATIVE Mode**: Targeted design for emotion detection and archetype systems  
+3. **IMPLEMENT Mode**: Systematic implementation
+4. **REFLECT Mode**: In-depth feature reflection
+5. **ARCHIVE Mode**: Feature-specific archiving
+
+**To continue with proper Level 3 workflow, type**: `PLAN`
+
+### 📋 PLAN MODE: COMPREHENSIVE IMPLEMENTATION PLAN ✅
+
+**Planning Status**: 🚀 EXECUTING LEVEL 3 COMPREHENSIVE PLANNING  
+**Based on**: Level 3 workflow requirements and comprehensive planning guidelines  
+**Technology Validation**: ✅ REQUIRED (GPT-4o integration proven)
+
+#### 🎯 DETAILED REQUIREMENTS ANALYSIS
+
+**Core Functional Requirements**:
+1. **Enhanced Content Processing**
+   - ✅ Current: Voice/video messages → transcription → processing
+   - 🆕 Required: Text messages, forwards, quotes → direct processing
+   - 🆕 Required: Unified processing pipeline for all content types
+
+2. **Emotion Detection System**
+   - 🆕 Required: GPT-4o-based analysis for сарказм, токсичность, манипуляция
+   - 🆕 Required: Scoring system (high ≥0.7 sarcasm, ≥0.6 toxicity, ≥0.5 manipulation)
+   - 🆕 Required: ≤0.3s processing overhead
+   - 🆕 Required: Parallel execution with DEFAULT/TONE modes
+
+3. **Archetype Response System**
+   - 🆕 Required: Four distinct response styles (EMPATH, META-SAGE, TRICKSTER, CRAZY-WISDOM)
+   - 🆕 Required: Auto-selection based on emotion detection scores
+   - 🆕 Required: User override capability for manual archetype selection
+   - 🆕 Required: 2-3 готовые реплики per selected archetype
+
+4. **Advanced User Interface**
+   - 🆕 Required: Button-based interaction system
+   - 🆕 Required: "🤖 совет" button → archetype selection → response options
+   - 🆕 Required: "📄 транскрипт" button → file download (voice/video only)
+   - 🆕 Required: Enhanced response format with emotion scores
+
+5. **Content Management**
+   - 🆕 Required: 24-hour file retention system
+   - 🆕 Required: Context memory (30 replies OR 5 minutes)
+   - 🆕 Required: Automatic cleanup processes
+   - 🆕 Required: /context_off command functionality
+
+**Non-Functional Requirements**:
+- Performance: ≤1s additional delay total
+- Cost: ≤0.002 USD/message
+- Reliability: Graceful fallback when emotion detection fails
+- Scalability: Maintain current processing capabilities
+- Usability: Intuitive button interface with clear feedback
+
+#### 🧩 COMPONENT ANALYSIS
+
+**New Components to Create**:
+
+1. **EmotionAnalyzer** (High Priority)
+   - Purpose: GPT-4o-based emotion detection
+   - Interface: async analyze_emotions(text) → EmotionScores
+   - Integration: Parallel with DEFAULT/TONE processing
+   - Dependencies: OpenAI client, existing text_processor patterns
+
+2. **ArchetypeResponseSystem** (High Priority)
+   - Purpose: Generate context-aware responses in 4 styles
+   - Interface: async generate_responses(text, emotion_scores, archetype) → List[str]
+   - Integration: Triggered by button interactions
+   - Dependencies: GPT-4o, archetype configuration files
+
+3. **ButtonUIManager** (Medium Priority)
+   - Purpose: Handle inline keyboard interactions
+   - Interface: async handle_button_callback(callback_query) → None
+   - Integration: Extends existing message handlers
+   - Dependencies: aiogram InlineKeyboardMarkup, callback handlers
+
+4. **ContentManager** (Medium Priority)
+   - Purpose: 24-hour file retention and context memory
+   - Interface: async store_content(), cleanup_expired(), manage_context()
+   - Integration: Background tasks, Redis/file system
+   - Dependencies: Redis for context, file system for transcripts
+
+**Existing Components to Modify**:
+
+1. **TextProcessor** (Major Modifications)
+   - Add emotion analysis integration
+   - Extend processing result format
+   - Include emotion scores in output
+
+2. **main.py** (Moderate Modifications)
+   - Add text message handlers (currently only voice/video)
+   - Integrate button callback handlers
+   - Add content storage integration
+
+3. **Mode Configuration System** (Minor Modifications)
+   - Add archetype mode configurations
+   - Extend mode loading for 4 new archetypes
+
+**Component Dependencies & Interactions**:
+```
+TextProcessor ← EmotionAnalyzer
+TextProcessor → ArchetypeResponseSystem  
+main.py ← ButtonUIManager
+main.py ← ContentManager
+ArchetypeResponseSystem ← Mode Config Files
+```
+
+#### 🏗️ IMPLEMENTATION STRATEGY
+
+**Phase 1: Core Enhancement Infrastructure (2-3 hours)**
+1. **Emotion Detection Integration**
+   - Create EmotionAnalyzer class following TextProcessor patterns
+   - Implement GPT-4o prompt for emotion scoring
+   - Add parallel processing to existing DEFAULT/TONE workflow
+   - Unit test emotion detection accuracy
+
+2. **Enhanced Text Processing**
+   - Extend TextProcessor to include emotion analysis
+   - Modify ProcessingResult to include emotion scores
+   - Update main.py text handlers for all content types
+   - Test unified processing pipeline
+
+**Phase 2: Archetype Response System (2-3 hours)**
+1. **Archetype Configuration**
+   - Create 4 archetype mode files (empath.json, meta-sage.json, trickster.json, crazy-wisdom.json)
+   - Define prompts and characteristics for each archetype
+   - Implement archetype auto-selection logic based on emotion scores
+
+2. **Response Generation System**
+   - Create ArchetypeResponseSystem class
+   - Implement context-aware response generation
+   - Add response formatting and presentation logic
+
+**Phase 3: Advanced UI & Content Management (2-3 hours)**
+1. **Button Interface System**
+   - Create ButtonUIManager for inline keyboards
+   - Implement "🤖 совет" and "📄 транскрипт" buttons
+   - Add archetype selection interface
+   - Handle callback query processing
+
+2. **Content Management Features**
+   - Implement 24-hour file retention
+   - Add context memory management (30 replies/5 minutes)
+   - Create automatic cleanup background tasks
+   - Add /context_off command
+
+#### 🔧 TECHNOLOGY VALIDATION STATUS
+
+**Current Technology Stack** (✅ PROVEN):
+- **Framework**: aiogram 3 (current, working)
+- **AI Processing**: OpenAI GPT-4o (current, working)
+- **Configuration**: JSON-based mode system (current, working)
+- **Storage**: Redis for caching (current, working)
+- **Deployment**: Docker containerization (current, working)
+
+**Technology Validation Checkpoints**:
+- [x] **GPT-4o Integration**: Proven working in existing DEFAULT/TONE modes
+- [x] **aiogram 3 Button Support**: InlineKeyboardMarkup available and tested
+- [x] **Parallel Processing**: asyncio.gather() pattern established in TextProcessor
+- [x] **File Management**: Existing temp/ directory and cleanup patterns
+- [x] **Redis Integration**: User language caching already implemented
+- [ ] **Extended Message Handling**: Need to verify text message processing
+- [ ] **Callback Handler Integration**: Need to implement button callback system
+
+**Required Technology Extensions**:
+- No new dependencies required
+- Leverage existing OpenAI, aiogram, Redis integrations
+- Extend current JSON configuration pattern
+- Utilize established async processing patterns
+
+#### 🎨 CREATIVE PHASES STATUS
+
+**1. Archetype System Design** (✅ CREATIVE PHASE COMPLETE)
+- **Status**: ✅ COMPLETE - [`creative-archetype-system-design.md`](creative/creative-archetype-system-design.md)
+- **Decisions Made**: 
+  - Mythological archetypes selected (EMPATH, META-SAGE, TRICKSTER, CRAZY-WISDOM)
+  - Detailed personality profiles and prompt frameworks defined
+  - Auto-selection algorithm based on emotion scores designed
+- **Output**: Complete archetype personality specifications and selection logic
+
+**2. Button UI/UX Design** (✅ CREATIVE PHASE COMPLETE)
+- **Status**: ✅ COMPLETE - [`creative-button-uiux-design.md`](creative/creative-button-uiux-design.md)
+- **Decisions Made**:
+  - Two-step progressive disclosure pattern selected
+  - 4-state interaction flow designed (Initial → Suggest → Manual → Response)
+  - Auto-suggestion with educational explanation and manual override
+- **Output**: Complete UI interaction specifications and button flow design
+
+**3. Emotion Detection Prompt Engineering** (⚠️ DEFERRED TO IMPLEMENTATION)
+- **Status**: ⚠️ DEFERRED - Will be handled during implementation if needed
+- **Rationale**: Single GPT-4o prompt optimization can be iteratively refined during development
+
+#### 🛡️ RISK ASSESSMENT & MITIGATION
+
+**High Priority Risks**:
+
+1. **Performance Impact Risk**
+   - **Risk**: Additional GPT-4o calls increase response time
+   - **Mitigation**: Parallel processing, optimize prompts, implement caching
+   - **Monitoring**: Track processing times, set performance alerts
+
+2. **Button State Management Complexity**
+   - **Risk**: Complex callback handling and state synchronization
+   - **Mitigation**: Simple state machine, Redis-based session storage
+   - **Monitoring**: Test edge cases, implement error recovery
+
+3. **Content Storage Management**
+   - **Risk**: Disk space usage, cleanup reliability
+   - **Mitigation**: Background cleanup tasks, storage monitoring
+   - **Monitoring**: Disk usage alerts, cleanup verification
+
+**Medium Priority Risks**:
+
+1. **Archetype Response Quality**
+   - **Risk**: Generated responses may not match archetype personality
+   - **Mitigation**: Iterative prompt optimization, quality testing
+   - **Monitoring**: User feedback, response quality metrics
+
+2. **Emotion Detection Accuracy**
+   - **Risk**: Inconsistent emotion scoring
+   - **Mitigation**: Prompt engineering, threshold calibration
+   - **Monitoring**: Manual spot checks, accuracy metrics
+
+#### 📋 IMPLEMENTATION CHECKLIST
+
+**Phase 1: Core Enhancement Infrastructure**
+- [x] Create EmotionAnalyzer class with GPT-4o integration ✅ COMPLETE
+- [x] Implement emotion scoring (сарказм, токсичность, манипуляция) ✅ COMPLETE
+- [x] Extend TextProcessor for emotion analysis inclusion ✅ COMPLETE
+- [x] Add text message handling to main.py ✅ COMPLETE
+- [x] Test unified processing for all content types ✅ COMPLETE
+- [ ] Verify ≤0.3s emotion detection overhead
+
+**Phase 2: Archetype Response System**
+- [x] **CREATIVE PHASE**: Design archetype personalities and prompts ✅ COMPLETE
+- [x] Create 4 archetype configuration files ✅ COMPLETE
+- [x] Implement ArchetypeResponseSystem class ✅ COMPLETE
+- [x] Add auto-selection logic based on emotion scores ✅ COMPLETE
+- [ ] Test response generation for each archetype
+- [ ] Verify 2-3 готовые реплики per archetype
+
+**Phase 3: Advanced UI & Content Management**
+- [x] **CREATIVE PHASE**: Design button interaction flow ✅ COMPLETE
+- [ ] Create ButtonUIManager for inline keyboards
+- [ ] Implement "🤖 совет" and "📄 транскрипт" buttons
+- [ ] Add 24-hour file retention system
+- [ ] Implement context memory (30 replies/5 minutes)
+- [ ] Create automatic cleanup background tasks
+- [ ] Add /context_off command functionality
+
+**Technology Validation Remaining**:
+- [ ] Verify extended text message processing
+- [ ] Test callback handler integration
+- [ ] Validate button state management
+- [ ] Confirm file retention system reliability
+
+#### 🎯 SUCCESS CRITERIA
+
+**Core Functionality**:
+- [ ] All content types processed (voice, video, text, forwards, quotes)
+- [ ] Emotion detection working with ≤0.3s overhead
+- [ ] 4 archetype responses available via button interface
+- [ ] Auto-archetype selection based on emotion scores
+- [ ] 24-hour file retention and context management working
+
+**Performance & Quality**:
+- [ ] ≤1s total additional delay maintained
+- [ ] ≤0.002 USD/message cost maintained
+- [ ] Graceful fallback when emotion detection fails
+- [ ] Intuitive button interface with clear user feedback
+
+**Integration & Reliability**:
+- [ ] Seamless integration with existing voice/video pipeline
+- [ ] Button interactions work reliably
+- [ ] Content cleanup automation functioning
+- [ ] /context_off command operational
+
+---
+
+## COMPLETED TASK: READY FOR NEW TASK ASSIGNMENT
 
 **Статус**: ✅ TEXT PROCESSOR IMPLEMENTATION COMPLETE  
 **Memory Bank**: Updated with successful text processor integration  

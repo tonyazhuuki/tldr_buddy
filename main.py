@@ -24,6 +24,11 @@ from speech_pipeline import SpeechPipelineFactory, SpeechPipelineError
 # Import text processing
 from text_processor import TextProcessor
 
+# Import enhanced systems for Phase 3
+import redis.asyncio as redis
+from button_ui_manager import ButtonUIManager, create_button_ui_manager
+from archetype_system import ArchetypeSystem, create_archetype_system
+
 # Import process management for single-instance enforcement
 from process_manager import enforce_single_instance
 
@@ -51,9 +56,14 @@ if not TELEGRAM_TOKEN:
 bot = Bot(token=TELEGRAM_TOKEN)
 dp = Dispatcher()
 
-# Global speech pipeline instance
+# Global pipeline instances
 speech_pipeline = None
 text_processor = None
+
+# Global enhanced system instances  
+redis_client = None
+archetype_system = None
+button_ui_manager = None
 
 
 @dp.message(Command("start"))
@@ -212,8 +222,25 @@ async def handle_voice_message(message: Message):
                     processing_result = await text_processor.process_parallel(transcribed_text)
                     formatted_output = text_processor.format_output(processing_result)
                     
-                    # Edit the processing message with final result
-                    await processing_msg.edit_text(formatted_output, parse_mode="Markdown")
+                    # Add enhanced button UI if available
+                    reply_markup = None
+                    if button_ui_manager is not None and processing_result.emotion_scores:
+                        try:
+                            reply_markup = await button_ui_manager.create_initial_buttons(
+                                user_id=int(user_id),
+                                message_id=processing_msg.message_id,
+                                emotion_scores=processing_result.emotion_scores,
+                                emotion_levels=processing_result.emotion_levels or {},
+                                original_text=transcribed_text,
+                                transcript_available=True,
+                                transcript_file_id=file_id
+                            )
+                        except Exception as button_error:
+                            logger.warning(f"Button UI creation failed: {button_error}")
+                            reply_markup = None
+                    
+                    # Edit the processing message with final result and buttons
+                    await processing_msg.edit_text(formatted_output, reply_markup=reply_markup, parse_mode="Markdown")
                     
                 except Exception as text_error:
                     logger.error(f"Text processing error: {text_error}")
@@ -348,6 +375,82 @@ async def handle_video_note(message: Message):
         await message.answer("❌ Неожиданная ошибка при обработке видео сообщения")
 
 
+@dp.message(F.text & ~F.command)
+async def handle_text_message(message: Message):
+    """Handle text messages, forwards, and quotes with enhanced processing"""
+    try:
+        if not message.text:
+            await message.reply("❌ Ошибка: Текст сообщения не найден")
+            return
+            
+        if not message.from_user:
+            await message.reply("❌ Ошибка: Информация о пользователе недоступна")
+            return
+            
+        user_id = str(message.from_user.id)
+        text_content = message.text.strip()
+        
+        # Check for minimum text length
+        if len(text_content) < 5:
+            await message.reply("📝 Слишком короткий текст для анализа. Минимум 5 символов.")
+            return
+        
+        logger.info(f"Received text message from user {user_id}, "
+                   f"length: {len(text_content)} chars")
+        
+        # Send processing notification
+        processing_msg = await message.answer("📝 Анализируем текст...")
+        
+        # Process text through enhanced pipeline with emotion analysis
+        if text_processor:
+            try:
+                processing_result = await text_processor.process_parallel(text_content)
+                formatted_output = text_processor.format_output(processing_result)
+                
+                # Add enhanced button UI if available
+                reply_markup = None
+                if button_ui_manager is not None and processing_result.emotion_scores:
+                    try:
+                        reply_markup = await button_ui_manager.create_initial_buttons(
+                            user_id=int(user_id),
+                            message_id=processing_msg.message_id,
+                            emotion_scores=processing_result.emotion_scores,
+                            emotion_levels=processing_result.emotion_levels or {},
+                            original_text=text_content,
+                            transcript_available=False,
+                            transcript_file_id=None
+                        )
+                    except Exception as button_error:
+                        logger.warning(f"Button UI creation failed: {button_error}")
+                        reply_markup = None
+                
+                # Edit the processing message with final result and buttons
+                await processing_msg.edit_text(formatted_output, reply_markup=reply_markup, parse_mode="Markdown")
+                
+            except Exception as text_error:
+                logger.error(f"Text processing error: {text_error}")
+                # Fallback to basic response
+                fallback_text = f"""
+📝 **Анализ текста**
+
+**Исходный текст:**
+{text_content}
+
+⚠️ Анализ недоступен (ошибка обработки)
+⏱️ Обработка завершена
+"""
+                await processing_msg.edit_text(fallback_text, parse_mode="Markdown")
+        else:
+            # Text processor not initialized
+            await processing_msg.edit_text(
+                "❌ Система анализа текста не инициализирована"
+            )
+            
+    except Exception as e:
+        logger.error(f"Error processing text message: {e}")
+        await message.answer("❌ Неожиданная ошибка при обработке текста")
+
+
 @dp.message(Command("list_modes"))
 async def cmd_list_modes(message: Message):
     """Handle /list_modes command"""
@@ -388,6 +491,21 @@ async def cmd_set_model(message: Message):
 Текущая конфигурация оптимизирована для лучшего баланса скорости и качества.
 """
     await message.answer(info_text, parse_mode="Markdown")
+
+
+from aiogram.types import CallbackQuery
+
+@dp.callback_query()
+async def handle_button_callback(callback_query: CallbackQuery):
+    """Handle button callbacks for enhanced UI"""
+    try:
+        if button_ui_manager is not None:
+            await button_ui_manager.handle_callback(callback_query, bot)
+        else:
+            await callback_query.answer("❌ Button UI not available", show_alert=True)
+    except Exception as e:
+        logger.error(f"Error handling button callback: {e}")
+        await callback_query.answer("❌ Ошибка обработки", show_alert=True)
 
 
 @dp.error()
@@ -435,8 +553,8 @@ async def health_check(request):
 
 
 async def startup():
-    """Initialize speech processing pipeline on startup"""
-    global speech_pipeline, text_processor
+    """Initialize speech processing pipeline and enhanced systems on startup"""
+    global speech_pipeline, text_processor, redis_client, archetype_system, button_ui_manager
     
     try:
         logger.info("=== STARTUP INITIALIZATION ===")
@@ -467,6 +585,45 @@ async def startup():
         logger.info("Initializing text processor...")
         text_processor = TextProcessor(openai_api_key)
         logger.info("✓ Text processor initialized successfully")
+        
+        # Initialize enhanced systems (Phase 3)
+        logger.info("Initializing enhanced systems...")
+        
+        # Initialize Redis client
+        redis_host = os.getenv("REDIS_HOST", "localhost")
+        redis_port = int(os.getenv("REDIS_PORT", "6379"))
+        redis_password = os.getenv("REDIS_PASSWORD")
+        
+        try:
+            redis_client = redis.Redis(
+                host=redis_host,
+                port=redis_port, 
+                password=redis_password,
+                decode_responses=True
+            )
+            # Test connection
+            await redis_client.ping()
+            logger.info("✓ Redis client initialized and connected")
+        except Exception as redis_error:
+            logger.warning(f"Redis connection failed: {redis_error}")
+            logger.warning("Enhanced UI features will be disabled")
+            redis_client = None
+        
+        # Initialize archetype system
+        if text_processor and text_processor.client:
+            archetype_system = create_archetype_system(text_processor.client)
+            logger.info("✓ Archetype system initialized")
+        else:
+            archetype_system = None
+            logger.warning("Archetype system disabled (no OpenAI client)")
+        
+        # Initialize button UI manager
+        if redis_client and archetype_system:
+            button_ui_manager = create_button_ui_manager(redis_client, archetype_system)
+            logger.info("✓ Button UI manager initialized")
+        else:
+            button_ui_manager = None
+            logger.warning("Button UI disabled (missing Redis or archetype system)")
         
         logger.info("=== STARTUP COMPLETED SUCCESSFULLY ===")
         

@@ -17,6 +17,8 @@ from pathlib import Path
 import openai
 from openai import OpenAI
 
+from emotion_analyzer import EmotionAnalyzer, EmotionAnalysisIntegration
+
 logger = logging.getLogger(__name__)
 
 
@@ -43,8 +45,12 @@ class ProcessingResult:
     bullets: Optional[List[str]] = None
     actions: Optional[str] = None
     tone_analysis: Optional[Dict[str, str]] = None
+    emotion_scores: Optional[Dict[str, float]] = None
+    emotion_levels: Optional[Dict[str, str]] = None
+    emotion_high: Optional[Dict[str, bool]] = None
     error_message: Optional[str] = None
     processing_time: Optional[float] = None
+    emotion_processing_time: Optional[float] = None
 
 
 class ModeManager:
@@ -147,6 +153,10 @@ class TextProcessor:
         self.mode_manager = ModeManager(modes_directory)
         self.mode_manager.load_modes()
         
+        # Initialize emotion analysis
+        self.emotion_analyzer = EmotionAnalyzer(self.client)
+        self.emotion_integration = EmotionAnalysisIntegration(self.emotion_analyzer)
+        
     async def process_parallel(self, text: str) -> ProcessingResult:
         """Process text through DEFAULT and TONE modes in parallel"""
         try:
@@ -167,10 +177,11 @@ class TextProcessor:
                 logger.error(error_msg)
                 return ProcessingResult(success=False, error_message=error_msg)
             
-            # Process both modes in parallel
+            # Process both modes and emotion analysis in parallel
             tasks = [
                 self._process_mode(text, default_mode),
-                self._process_mode(text, tone_mode)
+                self._process_mode(text, tone_mode),
+                self.emotion_analyzer.analyze_emotions(text)
             ]
             
             results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -178,6 +189,7 @@ class TextProcessor:
             # Parse results
             default_result = results[0] if not isinstance(results[0], Exception) else None
             tone_result = results[1] if not isinstance(results[1], Exception) else None
+            emotion_result = results[2] if not isinstance(results[2], Exception) else None
             
             # Ensure results are strings or None
             default_text = default_result if isinstance(default_result, str) else None
@@ -189,6 +201,24 @@ class TextProcessor:
             # Parse TONE mode result
             tone_analysis = self._parse_tone_result(tone_text)
             
+            # Process emotion analysis result
+            emotion_scores = None
+            emotion_levels = None
+            emotion_high = None
+            emotion_processing_time = None
+            
+            if emotion_result and not isinstance(emotion_result, Exception):
+                from emotion_analyzer import EmotionScores
+                if isinstance(emotion_result, EmotionScores):
+                    emotion_scores = {
+                        'sarcasm': emotion_result.sarcasm,
+                        'toxicity': emotion_result.toxicity,
+                        'manipulation': emotion_result.manipulation
+                    }
+                    emotion_levels = self.emotion_analyzer.get_emotion_levels(emotion_result)
+                    emotion_high = self.emotion_analyzer.has_high_emotion(emotion_result)
+                    emotion_processing_time = emotion_result.processing_time
+            
             processing_time = asyncio.get_event_loop().time() - start_time
             
             return ProcessingResult(
@@ -197,7 +227,11 @@ class TextProcessor:
                 bullets=bullets,
                 actions=actions,
                 tone_analysis=tone_analysis,
-                processing_time=processing_time
+                emotion_scores=emotion_scores,
+                emotion_levels=emotion_levels,
+                emotion_high=emotion_high,
+                processing_time=processing_time,
+                emotion_processing_time=emotion_processing_time
             )
             
         except Exception as e:
@@ -320,6 +354,14 @@ class TextProcessor:
         # Actions
         if result.actions and result.actions.lower() != 'нет' and result.actions.strip():
             output_parts.append(f"👉 **Действия**: {result.actions}")
+        
+        # Emotion analysis indicators (as per creative specifications)
+        if result.emotion_levels:
+            emotion_parts = []
+            emotion_parts.append(f"😈 уровень сарказма: {result.emotion_levels.get('sarcasm', 'неизвестно')}")
+            emotion_parts.append(f"☠ уровень токсичности: {result.emotion_levels.get('toxicity', 'неизвестно')}")
+            emotion_parts.append(f"🎣 уровень скрытой манипуляции: {result.emotion_levels.get('manipulation', 'неизвестно')}")
+            output_parts.append("\n".join(emotion_parts))
         
         # Tone analysis with structured format
         if result.tone_analysis:
