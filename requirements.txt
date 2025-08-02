@@ -1,7 +1,6 @@
-# Telegram Voice-to-Insight Pipeline Dependencies
-
-# Core Bot Framework
-aiogram==3.21.0
+# TL;DR Buddy Requirements
+# Force Railway rebuild: 2025-08-02 14:18 - Buttons v1.5
+aiogram==3.10.0
 
 # LLM API Integration
 openai==1.96.1
