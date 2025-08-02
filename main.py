@@ -579,6 +579,27 @@ async def handle_button_callback(callback_query: CallbackQuery):
         await callback_query.answer("❌ Ошибка обработки", show_alert=True)
 
 
+# Simple button callback handler for Railway compatibility
+@dp.callback_query(lambda callback_query: callback_query.data in ["advice_simple", "transcript_simple"])
+async def handle_simple_buttons(callback_query: CallbackQuery):
+    """Handle simple button callbacks without Redis"""
+    try:
+        callback_data = callback_query.data
+        
+        if callback_data == "advice_simple":
+            await callback_query.answer("💡 Совет: Функции советов пока разрабатываются. Скоро будут готовы архетипы ответов!", show_alert=True)
+        elif callback_data == "transcript_simple":
+            await callback_query.answer("📄 Транскрипт: Функция скачивания транскриптов в разработке. Скоро будет доступна!", show_alert=True)
+        else:
+            await callback_query.answer("❓ Неизвестная команда", show_alert=True)
+            
+        logger.info(f"Button callback handled: {callback_data}")
+        
+    except Exception as e:
+        logger.error(f"Error handling simple button callback: {e}")
+        await callback_query.answer("❌ Ошибка обработки кнопки", show_alert=True)
+
+
 @dp.error()
 async def error_handler(event: ErrorEvent):
     """Global error handler"""
