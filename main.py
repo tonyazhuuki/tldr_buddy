@@ -248,6 +248,7 @@ async def handle_voice_message(message: Message):
                             reply_markup = None
                     else:
                         logger.warning("Button UI Manager is None - buttons will not be created")
+                        logger.info("🔥🔥🔥 CREATING FALLBACK BUTTONS WITHOUT REDIS 🔥🔥🔥")
                         # Create simple buttons without Redis as fallback
                         from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
                         reply_markup = InlineKeyboardMarkup(inline_keyboard=[
@@ -256,7 +257,7 @@ async def handle_voice_message(message: Message):
                                 InlineKeyboardButton(text="📄 транскрипт", callback_data="transcript_simple")
                             ]
                         ])
-                        logger.info("✓ Created simple buttons without Redis")
+                        logger.info("✅✅✅ Created simple buttons without Redis ✅✅✅")
                     
                     # Edit the processing message with final result and buttons
                     await processing_msg.edit_text(formatted_output, reply_markup=reply_markup, parse_mode="Markdown")
@@ -452,6 +453,7 @@ async def handle_text_message(message: Message):
                         reply_markup = None
                 else:
                     logger.warning("Button UI Manager is None - creating simple buttons")
+                    logger.info("🔥🔥🔥 CREATING FALLBACK BUTTONS WITHOUT REDIS 🔥🔥🔥")
                     # Create simple buttons without Redis as fallback
                     from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
                     reply_markup = InlineKeyboardMarkup(inline_keyboard=[
@@ -459,7 +461,7 @@ async def handle_text_message(message: Message):
                             InlineKeyboardButton(text="🤖 совет", callback_data="advice_simple"),
                         ]
                     ])
-                    logger.info("✓ Created simple buttons without Redis for text")
+                    logger.info("✅✅✅ Created simple buttons without Redis for text ✅✅✅")
                 
                 # Edit the processing message with final result and buttons
                 await processing_msg.edit_text(formatted_output, reply_markup=reply_markup, parse_mode="Markdown")
@@ -606,8 +608,13 @@ async def health_check(request):
 
 
 async def startup():
-    """Initialize speech processing pipeline and enhanced systems on startup"""
-    global speech_pipeline, text_processor, redis_client, archetype_system, button_ui_manager
+    """Initialize the bot systems"""
+    global openai_client, text_processor, speech_pipeline, redis_client, archetype_system, button_ui_manager
+    
+    logger.info("🚀 BOT STARTUP - Railway Deployment Check")
+    logger.info("========================================")
+    logger.info(f"Python version: {sys.version}")
+    logger.info(f"Working directory: {os.getcwd()}")
     
     try:
         logger.info("=== STARTUP INITIALIZATION ===")
