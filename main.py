@@ -550,53 +550,58 @@ async def cmd_set_model(message: Message):
 
 from aiogram.types import CallbackQuery
 
-@dp.callback_query()
-async def handle_button_callback(callback_query: CallbackQuery):
-    """Handle button interactions with enhanced archetype responses"""
-    try:
-        if button_ui_manager:
-            # Use the full button UI manager if available
-            result = await button_ui_manager.handle_callback(
-                callback_query=callback_query,
-                bot=bot
-            )
-            
-            if not result:
-                await callback_query.answer("❌ Не удалось обработать запрос", show_alert=True)
-        else:
-            # Simple fallback for when Redis is not available
-            callback_data = callback_query.data
-            
-            if callback_data == "advice_simple":
-                await callback_query.answer("💡 Совет: Эта функция временно недоступна без Redis", show_alert=True)
-            elif callback_data == "transcript_simple":
-                await callback_query.answer("📄 Транскрипт: Эта функция временно недоступна без Redis", show_alert=True)
-            else:
-                await callback_query.answer("❓ Неизвестная команда", show_alert=True)
-                
-    except Exception as e:
-        logger.error(f"Error handling button callback: {e}")
-        await callback_query.answer("❌ Ошибка обработки", show_alert=True)
+# TEMPORARILY DISABLED - conflicts with simple handler
+# @dp.callback_query()
+# async def handle_button_callback(callback_query: CallbackQuery):
+#     """Handle button interactions with enhanced archetype responses"""
+#     try:
+#         if button_ui_manager:
+#             # Use the full button UI manager if available
+#             result = await button_ui_manager.handle_callback(
+#                 callback_query=callback_query,
+#                 bot=bot
+#             )
+#             
+#             if not result:
+#                 await callback_query.answer("❌ Не удалось обработать запрос", show_alert=True)
+#         else:
+#             # Simple fallback for when Redis is not available
+#             callback_data = callback_query.data
+#             
+#             if callback_data == "advice_simple":
+#                 await callback_query.answer("💡 Совет: Эта функция временно недоступна без Redis", show_alert=True)
+#             elif callback_data == "transcript_simple":
+#                 await callback_query.answer("📄 Транскрипт: Эта функция временно недоступна без Redis", show_alert=True)
+#             else:
+#                 await callback_query.answer("❓ Неизвестная команда", show_alert=True)
+#                 
+#     except Exception as e:
+#         logger.error(f"Error handling button callback: {e}")
+#         await callback_query.answer("❌ Ошибка обработки", show_alert=True)
 
 
 # Simple button callback handler for Railway compatibility
-@dp.callback_query(lambda callback_query: callback_query.data in ["advice_simple", "transcript_simple"])
+@dp.callback_query()
 async def handle_simple_buttons(callback_query: CallbackQuery):
     """Handle simple button callbacks without Redis"""
     try:
+        logger.info(f"🔥 CALLBACK RECEIVED: {callback_query.data}")
         callback_data = callback_query.data
         
         if callback_data == "advice_simple":
             await callback_query.answer("💡 Совет: Функции советов пока разрабатываются. Скоро будут готовы архетипы ответов!", show_alert=True)
+            logger.info("✅ Advice button handled successfully")
         elif callback_data == "transcript_simple":
             await callback_query.answer("📄 Транскрипт: Функция скачивания транскриптов в разработке. Скоро будет доступна!", show_alert=True)
+            logger.info("✅ Transcript button handled successfully")
         else:
             await callback_query.answer("❓ Неизвестная команда", show_alert=True)
+            logger.info(f"❓ Unknown callback: {callback_data}")
             
-        logger.info(f"Button callback handled: {callback_data}")
-        
     except Exception as e:
-        logger.error(f"Error handling simple button callback: {e}")
+        logger.error(f"🔥 ERROR handling button callback: {e}")
+        import traceback
+        logger.error(f"🔥 Traceback: {traceback.format_exc()}")
         await callback_query.answer("❌ Ошибка обработки кнопки", show_alert=True)
 
 
