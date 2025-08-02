@@ -613,6 +613,9 @@ async def startup():
     
     logger.info("🚀 BOT STARTUP - Railway Deployment Check")
     logger.info("========================================")
+    logger.info("🆕 VERSION: 2025-08-02 BUTTONS FALLBACK v1.5")
+    logger.info("🆕 EXPECTED: Fallback buttons without Redis")
+    logger.info("========================================")
     logger.info(f"Python version: {sys.version}")
     logger.info(f"Working directory: {os.getcwd()}")
     
