@@ -25,10 +25,10 @@ from speech_pipeline import SpeechPipelineFactory, SpeechPipelineError
 from text_processor import TextProcessor
 
 # Import enhanced systems for Phase 3
-# Temporarily disabled for deployment fix
-# import redis.asyncio as redis
-# from button_ui_manager import ButtonUIManager, create_button_ui_manager
-# from archetype_system import ArchetypeSystem, create_archetype_system
+# Partially re-enabled for gradual restoration
+# import redis.asyncio as redis  # Keep Redis disabled for now
+# from button_ui_manager import ButtonUIManager, create_button_ui_manager  # Keep buttons disabled
+from archetype_system import ArchetypeSystem, create_archetype_system
 
 # Import process management for single-instance enforcement
 from process_manager import enforce_single_instance
@@ -591,10 +591,10 @@ async def startup():
         logger.info("✓ Text processor initialized successfully")
         
         # Initialize enhanced systems (Phase 3)
-        # Temporarily disabled for deployment fix
-        logger.info("Enhanced features temporarily disabled for deployment fix")
+        # Partially re-enabled - archetype system only
+        logger.info("Initializing archetype system...")
         
-        # Initialize Redis client
+        # Initialize Redis client (keeping disabled for now)
         # redis_host = os.getenv("REDIS_HOST", "localhost")
         # redis_port = int(os.getenv("REDIS_PORT", "6379"))
         # redis_password = os.getenv("REDIS_PASSWORD")
@@ -615,20 +615,20 @@ async def startup():
         redis_client = None
         
         # Initialize archetype system
-        # if text_processor and text_processor.client:
-        #     archetype_system = create_archetype_system(text_processor.client)
-        #     logger.info("✓ Archetype system initialized")
-        # else:
-        archetype_system = None
-        #     logger.warning("Archetype system disabled (no OpenAI client)")
+        if text_processor and text_processor.client:
+            archetype_system = create_archetype_system(text_processor.client)
+            logger.info("✓ Archetype system initialized")
+        else:
+            archetype_system = None
+            logger.warning("Archetype system disabled (no OpenAI client)")
         
-        # Initialize button UI manager
+        # Initialize button UI manager (keeping disabled for now)
         # if redis_client and archetype_system:
         #     button_ui_manager = create_button_ui_manager(redis_client, archetype_system)
         #     logger.info("✓ Button UI manager initialized")
         # else:
         button_ui_manager = None
-        #     logger.warning("Button UI disabled (missing Redis or archetype system)")
+        logger.warning("Button UI temporarily disabled")
         
         logger.info("=== STARTUP COMPLETED SUCCESSFULLY ===")
         
