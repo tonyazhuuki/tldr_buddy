@@ -273,10 +273,12 @@ class EmotionAnalyzer:
             Dict with emotion names and their level descriptions
         """
         if scores.error_message:
+            # Show first 30 chars of error for debugging
+            error_short = scores.error_message[:30] + "..." if len(scores.error_message) > 30 else scores.error_message
             return {
-                'sarcasm': 'ошибка',
-                'toxicity': 'ошибка', 
-                'manipulation': 'ошибка'
+                'sarcasm': f'ошибка: {error_short}',
+                'toxicity': f'ошибка: {error_short}', 
+                'manipulation': f'ошибка: {error_short}'
             }
         
         def score_to_level(score: float, high_threshold: float) -> str:
