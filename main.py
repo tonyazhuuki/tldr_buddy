@@ -226,10 +226,8 @@ async def handle_voice_message(message: Message):
                     # Add enhanced button UI if available
                     reply_markup = None
                     # Temporarily show buttons even with emotion errors for testing
-                    logger.info(f"Button UI Manager available: {button_ui_manager is not None}")
                     if button_ui_manager is not None: # and processing_result.emotion_scores:
                         try:
-                            logger.info("Attempting to create buttons for voice message...")
                             # Use dummy emotion scores if real ones failed
                             emotion_scores = processing_result.emotion_scores or {'sarcasm': 0.3, 'toxicity': 0.2, 'manipulation': 0.1}
                             emotion_levels = processing_result.emotion_levels or {'sarcasm': 'средний', 'toxicity': 'низкий', 'manipulation': 'низкий'}
@@ -243,7 +241,6 @@ async def handle_voice_message(message: Message):
                                 transcript_available=True,
                                 transcript_file_id=file_id
                             )
-                            logger.info(f"Buttons created successfully: {reply_markup is not None}")
                         except Exception as button_error:
                             logger.error(f"Button UI creation failed: {button_error}")
                             import traceback
@@ -251,6 +248,15 @@ async def handle_voice_message(message: Message):
                             reply_markup = None
                     else:
                         logger.warning("Button UI Manager is None - buttons will not be created")
+                        # Create simple buttons without Redis as fallback
+                        from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+                        reply_markup = InlineKeyboardMarkup(inline_keyboard=[
+                            [
+                                InlineKeyboardButton(text="🤖 совет", callback_data="advice_simple"),
+                                InlineKeyboardButton(text="📄 транскрипт", callback_data="transcript_simple")
+                            ]
+                        ])
+                        logger.info("✓ Created simple buttons without Redis")
                     
                     # Edit the processing message with final result and buttons
                     await processing_msg.edit_text(formatted_output, reply_markup=reply_markup, parse_mode="Markdown")
@@ -426,7 +432,7 @@ async def handle_text_message(message: Message):
                 logger.info(f"Button UI Manager available: {button_ui_manager is not None}")
                 if button_ui_manager is not None: # and processing_result.emotion_scores:
                     try:
-                        logger.info("Attempting to create buttons for text message...")
+                        logger.info(f"Attempting to create buttons for text message...")
                         # Use dummy emotion scores if real ones failed
                         emotion_scores = processing_result.emotion_scores or {'sarcasm': 0.3, 'toxicity': 0.2, 'manipulation': 0.1}
                         emotion_levels = processing_result.emotion_levels or {'sarcasm': 'средний', 'toxicity': 'низкий', 'manipulation': 'низкий'}
@@ -444,6 +450,16 @@ async def handle_text_message(message: Message):
                     except Exception as button_error:
                         logger.warning(f"Button UI creation failed: {button_error}")
                         reply_markup = None
+                else:
+                    logger.warning("Button UI Manager is None - creating simple buttons")
+                    # Create simple buttons without Redis as fallback
+                    from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+                    reply_markup = InlineKeyboardMarkup(inline_keyboard=[
+                        [
+                            InlineKeyboardButton(text="🤖 совет", callback_data="advice_simple"),
+                        ]
+                    ])
+                    logger.info("✓ Created simple buttons without Redis for text")
                 
                 # Edit the processing message with final result and buttons
                 await processing_msg.edit_text(formatted_output, reply_markup=reply_markup, parse_mode="Markdown")
@@ -518,15 +534,31 @@ from aiogram.types import CallbackQuery
 
 @dp.callback_query()
 async def handle_button_callback(callback_query: CallbackQuery):
-    """Handle button callbacks for enhanced UI"""
+    """Handle button interactions with enhanced archetype responses"""
     try:
-        if button_ui_manager is not None:
-            await button_ui_manager.handle_callback(callback_query, bot)
+        if button_ui_manager:
+            # Use the full button UI manager if available
+            result = await button_ui_manager.handle_callback(
+                callback_query=callback_query,
+                bot=bot
+            )
+            
+            if not result:
+                await callback_query.answer("❌ Не удалось обработать запрос", show_alert=True)
         else:
-            await callback_query.answer("❌ Button UI not available", show_alert=True)
+            # Simple fallback for when Redis is not available
+            callback_data = callback_query.data
+            
+            if callback_data == "advice_simple":
+                await callback_query.answer("💡 Совет: Эта функция временно недоступна без Redis", show_alert=True)
+            elif callback_data == "transcript_simple":
+                await callback_query.answer("📄 Транскрипт: Эта функция временно недоступна без Redis", show_alert=True)
+            else:
+                await callback_query.answer("❓ Неизвестная команда", show_alert=True)
+                
     except Exception as e:
         logger.error(f"Error handling button callback: {e}")
-        await callback_query.answer("❌ Error processing button", show_alert=True)
+        await callback_query.answer("❌ Ошибка обработки", show_alert=True)
 
 
 @dp.error()
