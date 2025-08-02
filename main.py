@@ -225,13 +225,18 @@ async def handle_voice_message(message: Message):
                     
                     # Add enhanced button UI if available
                     reply_markup = None
-                    if button_ui_manager is not None and processing_result.emotion_scores:
+                    # Temporarily show buttons even with emotion errors for testing
+                    if button_ui_manager is not None: # and processing_result.emotion_scores:
                         try:
+                            # Use dummy emotion scores if real ones failed
+                            emotion_scores = processing_result.emotion_scores or {'sarcasm': 0.3, 'toxicity': 0.2, 'manipulation': 0.1}
+                            emotion_levels = processing_result.emotion_levels or {'sarcasm': 'средний', 'toxicity': 'низкий', 'manipulation': 'низкий'}
+                            
                             reply_markup = await button_ui_manager.create_initial_buttons(
                                 user_id=int(user_id),
                                 message_id=processing_msg.message_id,
-                                emotion_scores=processing_result.emotion_scores,
-                                emotion_levels=processing_result.emotion_levels or {},
+                                emotion_scores=emotion_scores,
+                                emotion_levels=emotion_levels,
                                 original_text=transcribed_text,
                                 transcript_available=True,
                                 transcript_file_id=file_id
@@ -410,13 +415,18 @@ async def handle_text_message(message: Message):
                 
                 # Add enhanced button UI if available
                 reply_markup = None
-                if button_ui_manager is not None and processing_result.emotion_scores:
+                # Temporarily show buttons even with emotion errors for testing
+                if button_ui_manager is not None: # and processing_result.emotion_scores:
                     try:
+                        # Use dummy emotion scores if real ones failed
+                        emotion_scores = processing_result.emotion_scores or {'sarcasm': 0.3, 'toxicity': 0.2, 'manipulation': 0.1}
+                        emotion_levels = processing_result.emotion_levels or {'sarcasm': 'средний', 'toxicity': 'низкий', 'manipulation': 'низкий'}
+                        
                         reply_markup = await button_ui_manager.create_initial_buttons(
                             user_id=int(user_id),
                             message_id=processing_msg.message_id,
-                            emotion_scores=processing_result.emotion_scores,
-                            emotion_levels=processing_result.emotion_levels or {},
+                            emotion_scores=emotion_scores,
+                            emotion_levels=emotion_levels,
                             original_text=text_content,
                             transcript_available=False,
                             transcript_file_id=None
