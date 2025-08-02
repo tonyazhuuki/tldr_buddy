@@ -274,7 +274,15 @@ async def handle_voice_message(message: Message):
 ⚠️ Анализ недоступен (ошибка обработки)
 ⏱️ Обработка завершена
 """
-                    await processing_msg.edit_text(fallback_text, parse_mode="Markdown")
+                    # Add simple buttons for voice messages
+                    from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+                    simple_buttons = InlineKeyboardMarkup(inline_keyboard=[
+                        [
+                            InlineKeyboardButton(text="🤖 совет", callback_data="advice_simple"),
+                            InlineKeyboardButton(text="📄 транскрипт", callback_data="transcript_simple")
+                        ]
+                    ])
+                    await processing_msg.edit_text(fallback_text, reply_markup=simple_buttons, parse_mode="Markdown")
             else:
                 # Text processor not initialized - fallback to transcription only
                 fallback_text = f"""
@@ -348,7 +356,15 @@ async def handle_video_note(message: Message):
                     formatted_output = text_processor.format_output(processing_result)
                     
                     # Edit the processing message with final result
-                    await processing_msg.edit_text(formatted_output, parse_mode="Markdown")
+                    # Add simple buttons for user interaction
+                    from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+                    simple_buttons = InlineKeyboardMarkup(inline_keyboard=[
+                        [
+                            InlineKeyboardButton(text="🤖 совет", callback_data="advice_simple"),
+                            InlineKeyboardButton(text="📄 транскрипт", callback_data="transcript_simple")
+                        ]
+                    ])
+                    await processing_msg.edit_text(formatted_output, reply_markup=simple_buttons, parse_mode="Markdown")
                     
                 except Exception as text_error:
                     logger.error(f"Text processing error: {text_error}")
