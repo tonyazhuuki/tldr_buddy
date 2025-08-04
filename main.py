@@ -551,32 +551,9 @@ async def cmd_set_model(message: Message):
 from aiogram.types import CallbackQuery
 
 @dp.callback_query()
-async def handle_button_callback(callback_query: CallbackQuery):
-    """Handle button interactions with enhanced archetype responses"""
-    try:
-        if button_ui_manager:
-            # Use the full button UI manager if available
-            result = await button_ui_manager.handle_callback(
-                callback_query=callback_query,
-                bot=bot
-            )
-            
-            if not result:
-                await callback_query.answer("❌ Не удалось обработать запрос", show_alert=True)
-        else:
-            # Simple fallback for when Redis is not available
-            callback_data = callback_query.data
-            
-            if callback_data == "advice_simple":
-                await callback_query.answer("💡 Совет: Эта функция временно недоступна без Redis", show_alert=True)
-            elif callback_data == "transcript_simple":
-                await callback_query.answer("📄 Транскрипт: Эта функция временно недоступна без Redis", show_alert=True)
-            else:
-                await callback_query.answer("❓ Неизвестная команда", show_alert=True)
-                
-    except Exception as e:
-        logger.error(f"Error handling button callback: {e}")
-        await callback_query.answer("❌ Ошибка обработки", show_alert=True)
+async def simple_callback(callback_query: CallbackQuery):
+    """Simple callback handler for buttons"""
+    await callback_query.answer("🤖 Кнопки работают! Полный функционал скоро будет готов.", show_alert=True)
 
 
 @dp.error()
