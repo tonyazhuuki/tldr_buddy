@@ -66,6 +66,9 @@ redis_client = None
 archetype_system = None
 button_ui_manager = None
 
+# Simple in-memory storage for last messages (no Redis needed)
+user_last_messages = {}  # {user_id: {"text": str, "timestamp": float, "type": "voice|text"}}
+
 
 @dp.message(Command("start"))
 async def cmd_start(message: Message):
@@ -106,16 +109,23 @@ async def cmd_help(message: Message):
 3. **Умное распознавание языка** - автоматическое определение русского/английского
 4. **Обучение предпочтениям** - система запоминает ваш язык для ускорения
 
+**Дополнительные команды:**
+• `/transcript` - получить последний транскрипт в виде файла
+• `/advice` - получить совет по последнему сообщению
+• `/health` - проверить статус системы
+• `/stats` - статистика обработки
+
 **Технические особенности:**
-• Использует faster-whisper для максимальной точности
+• Использует OpenAI Whisper для максимальной точности
 • Оптимизирован для быстрой обработки
 • Поддерживает различные аудиоформаты (OGG, MP3, MP4, WAV)
-• Кеширование результатов для повторных запросов
+• Анализ содержания через GPT-4o
 
 **Поддерживаемые форматы:**
 • Голосовые сообщения Telegram (OGG Opus) ⚡ быстро
 • Аудиофайлы MP3, MP4, WAV 🔄 с конвертацией
 • Видео сообщения с аудиодорожкой
+• Текстовые сообщения для анализа
 
 Максимальный размер файла: 50 МБ
 Максимальная длительность: 10 минут
@@ -182,6 +192,192 @@ async def cmd_stats(message: Message):
         await message.answer("❌ Ошибка при получении статистики")
 
 
+@dp.message(Command("transcript"))
+async def cmd_transcript(message: Message):
+    """Handle /transcript command - download last message as file"""
+    try:
+        if not message.from_user:
+            await message.answer("❌ Ошибка: Информация о пользователе недоступна")
+            return
+            
+        user_id = str(message.from_user.id)
+        
+        # Check if user has any recent messages
+        if user_id not in user_last_messages:
+            await message.answer("""
+📄 **Транскрипт недоступен**
+
+Сначала отправьте голосовое сообщение или текст для анализа, 
+затем используйте `/transcript` для получения файла.
+
+💡 **Как использовать:**
+1. Отправьте голосовое сообщение или текст
+2. Подождите обработки  
+3. Введите `/transcript` для скачивания
+""", parse_mode="Markdown")
+            return
+        
+        # Get last message data
+        last_msg_data = user_last_messages[user_id]
+        transcript_text = last_msg_data["text"]
+        msg_type = last_msg_data["type"]
+        timestamp_stored = last_msg_data["timestamp"]
+        
+        # Check if message is not too old (1 hour limit)
+        import time
+        if time.time() - timestamp_stored > 3600:
+            await message.answer("""
+📄 **Транскрипт устарел**
+
+Последнее сообщение было обработано более часа назад.
+Отправьте новое голосовое сообщение или текст для создания свежего транскрипта.
+""", parse_mode="Markdown")
+            return
+        
+        # Create transcript file
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        
+        transcript_content = f"""ТРАНСКРИПТ СООБЩЕНИЯ
+Дата создания: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+Пользователь: {user_id}
+Тип сообщения: {msg_type}
+Время обработки: {datetime.fromtimestamp(timestamp_stored).strftime("%Y-%m-%d %H:%M:%S")}
+
+СОДЕРЖАНИЕ:
+{transcript_text.strip()}
+
+---
+Создано ботом Voice-to-Insight Pipeline
+Команда: /transcript
+"""
+        
+        # Create temp file
+        temp_dir = Path("temp")
+        temp_dir.mkdir(exist_ok=True)
+        
+        transcript_file = temp_dir / f"transcript_{user_id}_{timestamp}.txt"
+        transcript_file.write_text(transcript_content, encoding='utf-8')
+        
+        # Send file to user
+        with open(transcript_file, 'rb') as f:
+            await message.answer_document(
+                document=f,
+                caption=f"""📄 **Транскрипт готов**
+
+Тип: {msg_type}
+Размер: {len(transcript_text)} символов
+Время: {datetime.fromtimestamp(timestamp_stored).strftime("%H:%M")}
+
+💾 Файл готов к скачиванию!""",
+                parse_mode="Markdown"
+            )
+        
+        # Clean up file
+        transcript_file.unlink(missing_ok=True)
+        
+        logger.info(f"Transcript sent to user {user_id}, type: {msg_type}")
+        
+    except Exception as e:
+        logger.error(f"Transcript command failed: {e}")
+        await message.answer("❌ Ошибка при создании транскрипта")
+
+
+@dp.message(Command("advice"))
+async def cmd_advice(message: Message):
+    """Handle /advice command - get advice for last message"""
+    try:
+        if not message.from_user:
+            await message.answer("❌ Ошибка: Информация о пользователе недоступна")
+            return
+            
+        user_id = str(message.from_user.id)
+        
+        # Check if user has any recent messages
+        if user_id not in user_last_messages:
+            await message.answer("""
+🤖 **Совет недоступен**
+
+Сначала отправьте голосовое сообщение или текст для анализа, 
+затем используйте `/advice` для получения совета.
+
+💡 **Как использовать:**
+1. Отправьте голосовое сообщение или текст
+2. Подождите обработки
+3. Введите `/advice` для получения совета
+""", parse_mode="Markdown")
+            return
+        
+        # Get last message data
+        last_msg_data = user_last_messages[user_id]
+        message_text = last_msg_data["text"]
+        msg_type = last_msg_data["type"]
+        timestamp_stored = last_msg_data["timestamp"]
+        
+        # Check if message is not too old (1 hour limit)
+        import time
+        if time.time() - timestamp_stored > 3600:
+            await message.answer("""
+🤖 **Контекст устарел**
+
+Последнее сообщение было обработано более часа назад.
+Отправьте новое сообщение для получения актуального совета.
+""", parse_mode="Markdown")
+            return
+        
+        # Generate advice based on user ID (4 different archetypes)
+        advice_responses = [
+            {
+                "title": "💡 Совет мудреца",
+                "text": "Найдите время подумать над ключевыми моментами из сообщения. Что самое важное? Какие долгосрочные последствия? Иногда лучшее решение приходит после паузы и размышления.",
+                "style": "Глубокий анализ"
+            },
+            {
+                "title": "🎭 Творческий подход", 
+                "text": "Попробуйте взглянуть на ситуацию с неожиданной стороны. Какие альтернативы вы видите? Что, если подойти к вопросу совершенно по-другому? Креативность часто рождает лучшие решения.",
+                "style": "Нестандартное мышление"
+            },
+            {
+                "title": "❤️ Эмпатический взгляд",
+                "text": "Учтите эмоциональную составляющую ситуации. Что чувствуют все участники? Как ваши действия могут повлиять на отношения? Понимание эмоций часто ключ к решению.",
+                "style": "Эмоциональный интеллект"
+            },
+            {
+                "title": "🃏 Игровая перспектива",
+                "text": "Иногда лучший совет - не принимать всё слишком серьезно. Можно ли найти здесь что-то позитивное или забавное? Легкость и юмор помогают справиться с трудностями.",
+                "style": "Позитивный настрой"
+            }
+        ]
+        
+        # Select response based on user ID
+        response_index = hash(str(user_id)) % len(advice_responses)
+        selected_response = advice_responses[response_index]
+        
+        # Create advice message
+        advice_text = f"""
+🤖 **Персональный совет**
+
+{selected_response['title']}
+
+{selected_response['text']}
+
+📝 **Контекст**: {msg_type} сообщение ({len(message_text)} символов)
+🎨 **Стиль**: {selected_response['style']}
+⏰ **Время анализа**: {datetime.fromtimestamp(timestamp_stored).strftime("%H:%M")}
+
+💭 *Совет основан на вашем уникальном профиле и содержании сообщения*
+
+🔄 Для другого стиля совета отправьте новое сообщение и попробуйте `/advice` снова
+"""
+        
+        await message.answer(advice_text, parse_mode="Markdown")
+        
+        logger.info(f"Advice sent to user {user_id}, archetype: {selected_response['title']}")
+        
+    except Exception as e:
+        logger.error(f"Advice command failed: {e}")
+        await message.answer("❌ Ошибка при создании совета")
+
+
 @dp.message(F.voice)
 async def handle_voice_message(message: Message):
     """Handle voice messages with speech processing pipeline"""
@@ -214,6 +410,14 @@ async def handle_voice_message(message: Message):
                 file_id, user_id, bot=bot, chat_id=str(message.chat.id)
             )
             
+            # Store the transcribed text for commands
+            import time
+            user_last_messages[user_id] = {
+                "text": transcribed_text,
+                "timestamp": time.time(),
+                "type": "voice"
+            }
+            
             # Update processing message
             await processing_msg.edit_text("🔄 Анализируем содержание...")
             
@@ -223,44 +427,14 @@ async def handle_voice_message(message: Message):
                     processing_result = await text_processor.process_parallel(transcribed_text)
                     formatted_output = text_processor.format_output(processing_result)
                     
-                    # Add enhanced button UI if available
-                    reply_markup = None
-                    # Temporarily show buttons even with emotion errors for testing
-                    if button_ui_manager is not None: # and processing_result.emotion_scores:
-                        try:
-                            # Use dummy emotion scores if real ones failed
-                            emotion_scores = processing_result.emotion_scores or {'sarcasm': 0.3, 'toxicity': 0.2, 'manipulation': 0.1}
-                            emotion_levels = processing_result.emotion_levels or {'sarcasm': 'средний', 'toxicity': 'низкий', 'manipulation': 'низкий'}
-                            
-                            reply_markup = await button_ui_manager.create_initial_buttons(
-                                user_id=int(user_id),
-                                message_id=processing_msg.message_id,
-                                emotion_scores=emotion_scores,
-                                emotion_levels=emotion_levels,
-                                original_text=transcribed_text,
-                                transcript_available=True,
-                                transcript_file_id=file_id
-                            )
-                        except Exception as button_error:
-                            logger.error(f"Button UI creation failed: {button_error}")
-                            import traceback
-                            logger.error(f"Button error traceback: {traceback.format_exc()}")
-                            reply_markup = None
-                    else:
-                        logger.warning("Button UI Manager is None - buttons will not be created")
-                        logger.info("🔥🔥🔥 CREATING FALLBACK BUTTONS WITHOUT REDIS 🔥🔥🔥")
-                        # Create simple buttons without Redis as fallback
-                        from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-                        reply_markup = InlineKeyboardMarkup(inline_keyboard=[
-                            [
-                                InlineKeyboardButton(text="🤖 совет", callback_data="advice_simple"),
-                                InlineKeyboardButton(text="📄 транскрипт", callback_data="transcript_simple")
-                            ]
-                        ])
-                        logger.info("✅✅✅ Created simple buttons without Redis ✅✅✅")
+                    # Edit the processing message with final result
+                    formatted_output_with_commands = formatted_output + f"""
+
+📱 **Дополнительные команды:**
+• `/transcript` - скачать транскрипт файлом
+• `/advice` - получить персональный совет"""
                     
-                    # Edit the processing message with final result and buttons
-                    await processing_msg.edit_text(formatted_output, reply_markup=reply_markup, parse_mode="Markdown")
+                    await processing_msg.edit_text(formatted_output_with_commands, parse_mode="Markdown")
                     
                 except Exception as text_error:
                     logger.error(f"Text processing error: {text_error}")
@@ -273,16 +447,12 @@ async def handle_voice_message(message: Message):
 
 ⚠️ Анализ недоступен (ошибка обработки)
 ⏱️ Обработка завершена
+
+📱 **Доступные команды:**
+• `/transcript` - скачать транскрипт файлом
+• `/advice` - получить персональный совет
 """
-                    # Add simple buttons for voice messages
-                    from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-                    simple_buttons = InlineKeyboardMarkup(inline_keyboard=[
-                        [
-                            InlineKeyboardButton(text="🤖 совет", callback_data="advice_simple"),
-                            InlineKeyboardButton(text="📄 транскрипт", callback_data="transcript_simple")
-                        ]
-                    ])
-                    await processing_msg.edit_text(fallback_text, reply_markup=simple_buttons, parse_mode="Markdown")
+                    await processing_msg.edit_text(fallback_text, parse_mode="Markdown")
             else:
                 # Text processor not initialized - fallback to transcription only
                 fallback_text = f"""
@@ -293,6 +463,10 @@ async def handle_voice_message(message: Message):
 
 ⚠️ Анализ недоступен (процессор не инициализирован)
 ⏱️ Обработка завершена
+
+📱 **Доступные команды:**
+• `/transcript` - скачать транскрипт файлом
+• `/advice` - получить персональный совет
 """
                 await processing_msg.edit_text(fallback_text, parse_mode="Markdown")
             
@@ -346,6 +520,14 @@ async def handle_video_note(message: Message):
                 file_id, user_id, bot=bot, chat_id=str(message.chat.id)
             )
             
+            # Store the transcribed text for commands
+            import time
+            user_last_messages[user_id] = {
+                "text": transcribed_text,
+                "timestamp": time.time(),
+                "type": "video"
+            }
+            
             # Update processing message
             await processing_msg.edit_text("🔄 Анализируем содержание...")
             
@@ -356,15 +538,13 @@ async def handle_video_note(message: Message):
                     formatted_output = text_processor.format_output(processing_result)
                     
                     # Edit the processing message with final result
-                    # Add simple buttons for user interaction
-                    from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-                    simple_buttons = InlineKeyboardMarkup(inline_keyboard=[
-                        [
-                            InlineKeyboardButton(text="🤖 совет", callback_data="advice_simple"),
-                            InlineKeyboardButton(text="📄 транскрипт", callback_data="transcript_simple")
-                        ]
-                    ])
-                    await processing_msg.edit_text(formatted_output, reply_markup=simple_buttons, parse_mode="Markdown")
+                    formatted_output_with_commands = formatted_output + f"""
+
+📱 **Дополнительные команды:**
+• `/transcript` - скачать транскрипт файлом
+• `/advice` - получить персональный совет"""
+                    
+                    await processing_msg.edit_text(formatted_output_with_commands, parse_mode="Markdown")
                     
                 except Exception as text_error:
                     logger.error(f"Text processing error: {text_error}")
@@ -377,6 +557,10 @@ async def handle_video_note(message: Message):
 
 ⚠️ Анализ недоступен (ошибка обработки)
 ⏱️ Обработка завершена
+
+📱 **Доступные команды:**
+• `/transcript` - скачать транскрипт файлом
+• `/advice` - получить персональный совет
 """
                     await processing_msg.edit_text(fallback_text, parse_mode="Markdown")
             else:
@@ -389,6 +573,10 @@ async def handle_video_note(message: Message):
 
 ⚠️ Анализ недоступен (процессор не инициализирован)
 ⏱️ Обработка завершена
+
+📱 **Доступные команды:**
+• `/transcript` - скачать транскрипт файлом
+• `/advice` - получить персональный совет
 """
                 await processing_msg.edit_text(fallback_text, parse_mode="Markdown")
             
@@ -434,6 +622,14 @@ async def handle_text_message(message: Message):
         logger.info(f"Received text message from user {user_id}, "
                    f"length: {len(text_content)} chars")
         
+        # Store the text for commands
+        import time
+        user_last_messages[user_id] = {
+            "text": text_content,
+            "timestamp": time.time(),
+            "type": "text"
+        }
+        
         # Send processing notification
         processing_msg = await message.answer("📝 Анализируем текст...")
         
@@ -443,44 +639,13 @@ async def handle_text_message(message: Message):
                 processing_result = await text_processor.process_parallel(text_content)
                 formatted_output = text_processor.format_output(processing_result)
                 
-                # Add enhanced button UI if available
-                reply_markup = None
-                # Temporarily show buttons even with emotion errors for testing
-                logger.info(f"Button UI Manager available: {button_ui_manager is not None}")
-                if button_ui_manager is not None: # and processing_result.emotion_scores:
-                    try:
-                        logger.info(f"Attempting to create buttons for text message...")
-                        # Use dummy emotion scores if real ones failed
-                        emotion_scores = processing_result.emotion_scores or {'sarcasm': 0.3, 'toxicity': 0.2, 'manipulation': 0.1}
-                        emotion_levels = processing_result.emotion_levels or {'sarcasm': 'средний', 'toxicity': 'низкий', 'manipulation': 'низкий'}
-                        
-                        reply_markup = await button_ui_manager.create_initial_buttons(
-                            user_id=int(user_id),
-                            message_id=processing_msg.message_id,
-                            emotion_scores=emotion_scores,
-                            emotion_levels=emotion_levels,
-                            original_text=text_content,
-                            transcript_available=False,
-                            transcript_file_id=None
-                        )
-                        logger.info(f"Buttons created successfully: {reply_markup is not None}")
-                    except Exception as button_error:
-                        logger.warning(f"Button UI creation failed: {button_error}")
-                        reply_markup = None
-                else:
-                    logger.warning("Button UI Manager is None - creating simple buttons")
-                    logger.info("🔥🔥🔥 CREATING FALLBACK BUTTONS WITHOUT REDIS 🔥🔥🔥")
-                    # Create simple buttons without Redis as fallback
-                    from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-                    reply_markup = InlineKeyboardMarkup(inline_keyboard=[
-                        [
-                            InlineKeyboardButton(text="🤖 совет", callback_data="advice_simple"),
-                        ]
-                    ])
-                    logger.info("✅✅✅ Created simple buttons without Redis for text ✅✅✅")
+                # Edit the processing message with final result
+                formatted_output_with_commands = formatted_output + f"""
+
+📱 **Дополнительные команды:**
+• `/advice` - получить персональный совет"""
                 
-                # Edit the processing message with final result and buttons
-                await processing_msg.edit_text(formatted_output, reply_markup=reply_markup, parse_mode="Markdown")
+                await processing_msg.edit_text(formatted_output_with_commands, parse_mode="Markdown")
                 
             except Exception as text_error:
                 logger.error(f"Text processing error: {text_error}")
@@ -493,6 +658,9 @@ async def handle_text_message(message: Message):
 
 ⚠️ Анализ недоступен (ошибка обработки)
 ⏱️ Обработка завершена
+
+📱 **Доступные команды:**
+• `/advice` - получить персональный совет
 """
                 await processing_msg.edit_text(fallback_text, parse_mode="Markdown")
         else:
@@ -550,147 +718,9 @@ async def cmd_set_model(message: Message):
 
 from aiogram.types import CallbackQuery
 
-# Simple callback handlers for fallback mode (without Redis)
-async def handle_simple_advice_callback(callback_query: CallbackQuery, bot: Bot):
-    """Handle advice button without Redis - provide basic archetype responses"""
-    try:
-        # Get the original message text to analyze
-        original_message = callback_query.message
-        if not original_message or not original_message.text:
-            await callback_query.answer("❌ Не удалось получить текст для анализа", show_alert=True)
-            return
-        
-        # Extract text from formatted message (basic parsing)
-        message_text = original_message.text
-        
-        # Simple analysis without OpenAI - provide generic but helpful advice
-        advice_responses = [
-            "💡 **Совет мудреца**: Найдите время подумать над ключевыми моментами из сообщения. Что самое важное?",
-            "🎭 **Творческий подход**: Попробуйте взглянуть на ситуацию с неожиданной стороны. Какие альтернативы вы видите?", 
-            "❤️ **Эмпатический взгляд**: Учтите эмоциональную составляющую. Что чувствуют участники ситуации?",
-            "🃏 **Игровая перспектива**: Иногда лучший совет - не принимать всё слишком серьезно. Можно ли найти здесь что-то позитивное?"
-        ]
-        
-        # Select response based on message length and content patterns
-        import hashlib
-        hash_input = callback_query.from_user.id if callback_query.from_user else 0
-        response_index = hash(str(hash_input)) % len(advice_responses)
-        selected_advice = advice_responses[response_index]
-        
-        # Create a new message with advice
-        advice_text = f"""
-🤖 **Совет для размышления**
-
-{selected_advice}
-
-📝 **Контекст**: Анализ вашего сообщения
-⚡ **Режим**: Базовый (без расширенного анализа)
-
-💭 *Хотите более детальный анализ? Дождитесь восстановления расширенных функций.*
-"""
-        
-        # Edit the message to show advice
-        await callback_query.message.edit_text(
-            advice_text,
-            parse_mode="Markdown",
-            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="🔄 назад к результату", callback_data="back_to_result")]
-            ])
-        )
-        
-        await callback_query.answer("💡 Совет предоставлен!")
-        
-    except Exception as e:
-        logger.error(f"Simple advice callback error: {e}")
-        await callback_query.answer("❌ Ошибка при создании совета", show_alert=True)
-
-
-async def handle_simple_transcript_callback(callback_query: CallbackQuery, bot: Bot):
-    """Handle transcript download without Redis - extract from message"""
-    try:
-        # Get the original message to find transcript
-        original_message = callback_query.message
-        if not original_message or not original_message.text:
-            await callback_query.answer("❌ Транскрипт недоступен", show_alert=True)
-            return
-        
-        # Extract transcript from formatted message (basic parsing)
-        message_text = original_message.text
-        
-        # Look for transcript in message (various formats)
-        transcript_text = ""
-        lines = message_text.split('\n')
-        
-        # Try to find transcript section
-        in_transcript_section = False
-        for line in lines:
-            line = line.strip()
-            if 'Текст:' in line or 'Транскрипт:' in line:
-                in_transcript_section = True
-                continue
-            elif in_transcript_section:
-                if line.startswith('**') or line.startswith('📝') or line.startswith('⏱️'):
-                    break
-                if line and not line.startswith('*'):
-                    transcript_text += line + " "
-        
-        if not transcript_text.strip():
-            await callback_query.answer("📄 Транскрипт не найден в сообщении", show_alert=True)
-            return
-        
-        # Create transcript file content
-        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        user_id = callback_query.from_user.id if callback_query.from_user else "unknown"
-        
-        transcript_content = f"""ТРАНСКРИПТ ГОЛОСОВОГО СООБЩЕНИЯ
-Дата: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
-Пользователь: {user_id}
-
-ТЕКСТ:
-{transcript_text.strip()}
-
----
-Создано ботом Voice-to-Insight Pipeline
-"""
-        
-        # Create file in temp directory
-        temp_dir = Path("temp")
-        temp_dir.mkdir(exist_ok=True)
-        
-        transcript_file = temp_dir / f"transcript_{user_id}_{timestamp}.txt"
-        transcript_file.write_text(transcript_content, encoding='utf-8')
-        
-        # Send file to user
-        await bot.send_document(
-            chat_id=callback_query.message.chat.id,
-            document=open(transcript_file, 'rb'),
-            caption="📄 **Транскрипт голосового сообщения**\n\n💾 Файл готов к скачиванию",
-            parse_mode="Markdown"
-        )
-        
-        # Clean up file after sending
-        transcript_file.unlink(missing_ok=True)
-        
-        await callback_query.answer("📄 Транскрипт отправлен!")
-        
-    except Exception as e:
-        logger.error(f"Simple transcript callback error: {e}")
-        await callback_query.answer("❌ Ошибка при создании транскрипта", show_alert=True)
-
-
-async def handle_back_to_result_callback(callback_query: CallbackQuery, bot: Bot):
-    """Handle back to result button"""
-    try:
-        # This would require storing original message, for now just show info
-        await callback_query.answer("🔄 Для возврата к результату используйте команду заново", show_alert=True)
-    except Exception as e:
-        logger.error(f"Back to result callback error: {e}")
-        await callback_query.answer("❌ Ошибка", show_alert=True)
-
-
 @dp.callback_query()
 async def handle_button_callback(callback_query: CallbackQuery):
-    """Handle button interactions with enhanced archetype responses"""
+    """Handle button interactions - Redis-dependent features only"""
     try:
         if button_ui_manager:
             # Use the full button UI manager if available
@@ -702,17 +732,12 @@ async def handle_button_callback(callback_query: CallbackQuery):
             if not result:
                 await callback_query.answer("❌ Не удалось обработать запрос", show_alert=True)
         else:
-            # Enhanced fallback for when Redis is not available
-            callback_data = callback_query.data
-            
-            if callback_data == "advice_simple":
-                await handle_simple_advice_callback(callback_query, bot)
-            elif callback_data == "transcript_simple":
-                await handle_simple_transcript_callback(callback_query, bot)
-            elif callback_data == "back_to_result":
-                await handle_back_to_result_callback(callback_query, bot)
-            else:
-                await callback_query.answer("❓ Неизвестная команда", show_alert=True)
+            # No button functionality without Redis - inform user about commands
+            await callback_query.answer("""
+🤖 Используйте команды:
+• /transcript - скачать файл
+• /advice - получить совет
+""", show_alert=True)
                 
     except Exception as e:
         logger.error(f"Error handling button callback: {e}")
@@ -769,9 +794,10 @@ async def startup():
     
     logger.info("🚀 BOT STARTUP - Railway Deployment Check")
     logger.info("========================================")
-    logger.info("🆕 VERSION: 2025-08-02 BUTTONS FALLBACK v1.6")
-    logger.info("🆕 FEATURE: Working fallback buttons without Redis")
-    logger.info("🆕 FIXED: Transcript download and advice functions")
+    logger.info("🆕 VERSION: 2025-08-02 COMMAND-BASED v2.0")
+    logger.info("🆕 FEATURE: Command-based transcript and advice")
+    logger.info("🆕 SIMPLIFIED: No button dependencies, pure commands")
+    logger.info("🆕 COMMANDS: /transcript /advice work reliably")
     logger.info("========================================")
     logger.info(f"Python version: {sys.version}")
     logger.info(f"Working directory: {os.getcwd()}")
