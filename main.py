@@ -110,8 +110,9 @@ async def cmd_help(message: Message):
 4. **Обучение предпочтениям** - система запоминает ваш язык для ускорения
 
 **Дополнительные команды:**
-• `/transcript` - получить последний транскрипт в виде файла
+• `/transcript` - получить последний транскрипт в виде сообщения
 • `/advice` - получить совет по последнему сообщению
+• `/debug` - проверить состояние сохраненных сообщений
 • `/health` - проверить статус системы
 • `/stats` - статистика обработки
 
@@ -234,52 +235,105 @@ async def cmd_transcript(message: Message):
 """, parse_mode="Markdown")
             return
         
-        # Create transcript file
-        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        # Send transcript as message (much simpler and more reliable)
+        timestamp_str = datetime.fromtimestamp(timestamp_stored).strftime("%Y-%m-%d %H:%M:%S")
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
-        transcript_content = f"""ТРАНСКРИПТ СООБЩЕНИЯ
-Дата создания: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
-Пользователь: {user_id}
-Тип сообщения: {msg_type}
-Время обработки: {datetime.fromtimestamp(timestamp_stored).strftime("%Y-%m-%d %H:%M:%S")}
+        transcript_message = f"""📄 **ТРАНСКРИПТ СООБЩЕНИЯ**
 
-СОДЕРЖАНИЕ:
+📅 **Дата создания**: {current_time}
+👤 **Пользователь**: {user_id}
+📱 **Тип**: {msg_type}
+⏰ **Время обработки**: {timestamp_str}
+
+📝 **СОДЕРЖАНИЕ:**
+```
 {transcript_text.strip()}
+```
+
+📊 **Статистика**:
+• Размер: {len(transcript_text)} символов
+• Слов: ~{len(transcript_text.split())}
+• Команда: /transcript
 
 ---
-Создано ботом Voice-to-Insight Pipeline
-Команда: /transcript
-"""
+💡 *Для копирования - нажмите на текст в блоке выше*"""
         
-        # Create temp file
-        temp_dir = Path("temp")
-        temp_dir.mkdir(exist_ok=True)
-        
-        transcript_file = temp_dir / f"transcript_{user_id}_{timestamp}.txt"
-        transcript_file.write_text(transcript_content, encoding='utf-8')
-        
-        # Send file to user
-        with open(transcript_file, 'rb') as f:
-            await message.answer_document(
-                document=f,
-                caption=f"""📄 **Транскрипт готов**
-
-Тип: {msg_type}
-Размер: {len(transcript_text)} символов
-Время: {datetime.fromtimestamp(timestamp_stored).strftime("%H:%M")}
-
-💾 Файл готов к скачиванию!""",
-                parse_mode="Markdown"
-            )
-        
-        # Clean up file
-        transcript_file.unlink(missing_ok=True)
+        await message.answer(transcript_message, parse_mode="Markdown")
         
         logger.info(f"Transcript sent to user {user_id}, type: {msg_type}")
         
     except Exception as e:
         logger.error(f"Transcript command failed: {e}")
-        await message.answer("❌ Ошибка при создании транскрипта")
+        import traceback
+        logger.error(f"Transcript error traceback: {traceback.format_exc()}")
+        
+        # Send detailed error info for debugging
+        error_details = f"""❌ **Ошибка при создании транскрипта**
+
+🔍 **Детали для отладки**:
+• Ошибка: {str(e)}
+• Пользователь: {user_id if 'user_id' in locals() else 'неизвестен'}
+• Есть сообщения: {user_id in user_last_messages if 'user_id' in locals() else 'неизвестно'}
+
+💡 Попробуйте:
+1. Отправить новое голосовое сообщение
+2. Подождать обработки
+3. Снова использовать /transcript"""
+        
+        await message.answer(error_details, parse_mode="Markdown")
+
+
+@dp.message(Command("debug"))
+async def cmd_debug(message: Message):
+    """Handle /debug command - show stored message state"""
+    try:
+        if not message.from_user:
+            await message.answer("❌ Ошибка: Информация о пользователе недоступна")
+            return
+            
+        user_id = str(message.from_user.id)
+        
+        # Check global state
+        total_users = len(user_last_messages)
+        
+        debug_info = f"""🔍 **ОТЛАДОЧНАЯ ИНФОРМАЦИЯ**
+
+👤 **Ваш ID**: {user_id}
+📊 **Всего пользователей в памяти**: {total_users}
+
+"""
+        
+        if user_id in user_last_messages:
+            last_msg_data = user_last_messages[user_id]
+            import time
+            age_seconds = int(time.time() - last_msg_data["timestamp"])
+            age_minutes = age_seconds // 60
+            
+            debug_info += f"""✅ **Ваше последнее сообщение найдено**:
+📱 **Тип**: {last_msg_data["type"]}
+📝 **Размер**: {len(last_msg_data["text"])} символов
+⏰ **Возраст**: {age_minutes} мин {age_seconds % 60} сек
+📋 **Превью**: {last_msg_data["text"][:100]}...
+
+✅ **Команды доступны**: /transcript и /advice готовы к использованию"""
+        else:
+            debug_info += f"""❌ **Ваше сообщение НЕ найдено**
+
+💡 **Для активации команд**:
+1. Отправьте голосовое сообщение или текст
+2. Дождитесь обработки
+3. Используйте /transcript или /advice
+
+🔄 **Сообщения хранятся 1 час**"""
+        
+        await message.answer(debug_info, parse_mode="Markdown")
+        
+        logger.info(f"Debug info sent to user {user_id}, has_message: {user_id in user_last_messages}")
+        
+    except Exception as e:
+        logger.error(f"Debug command failed: {e}")
+        await message.answer("❌ Ошибка при получении отладочной информации")
 
 
 @dp.message(Command("advice"))
