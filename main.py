@@ -112,6 +112,7 @@ async def cmd_help(message: Message):
 **Дополнительные команды:**
 • `/transcript` - получить последний транскрипт в виде сообщения
 • `/advice` - получить совет по последнему сообщению
+• `/layers` - анализ скрытых смыслов и мотивов
 • `/debug` - проверить состояние сохраненных сообщений
 • `/health` - проверить статус системы
 • `/stats` - статистика обработки
@@ -282,6 +283,101 @@ async def cmd_transcript(message: Message):
 3. Снова использовать /transcript"""
         
         await message.answer(error_details, parse_mode="Markdown")
+
+
+@dp.message(Command("layers"))
+async def cmd_layers(message: Message):
+    """Handle /layers command - deep analysis of hidden meanings"""
+    try:
+        if not message.from_user:
+            await message.answer("❌ Ошибка: Информация о пользователе недоступна")
+            return
+            
+        user_id = str(message.from_user.id)
+        
+        # Check if user has any recent messages
+        if user_id not in user_last_messages:
+            await message.answer("""
+🔍 **Анализ слоев недоступен**
+
+Сначала отправьте голосовое сообщение или текст для анализа, 
+затем используйте `/layers` для глубокого анализа.
+
+💡 **Как использовать:**
+1. Отправьте голосовое сообщение или текст
+2. Подождите обработки
+3. Введите `/layers` для анализа скрытых смыслов
+""", parse_mode="Markdown")
+            return
+        
+        # Get last message data
+        last_msg_data = user_last_messages[user_id]
+        message_text = last_msg_data["text"]
+        msg_type = last_msg_data["type"]
+        timestamp_stored = last_msg_data["timestamp"]
+        
+        # Check if message is not too old (1 hour limit)
+        import time
+        if time.time() - timestamp_stored > 3600:
+            await message.answer("""
+🔍 **Контекст устарел**
+
+Последнее сообщение было обработано более часа назад.
+Отправьте новое сообщение для актуального анализа слоев.
+""", parse_mode="Markdown")
+            return
+        
+        # Perform deep analysis using text processor
+        if text_processor:
+            try:
+                # Get full analysis with emotion detection
+                processing_result = await text_processor.process_parallel(message_text)
+                
+                # Extract emotion analysis if available
+                emotion_analysis = ""
+                if hasattr(processing_result, 'emotion_scores') and processing_result.emotion_scores:
+                    emotion_analysis = f"""
+🎭 **Эмоциональный анализ:**
+• Сарказм: {processing_result.emotion_scores.get('sarcasm', 0):.1%}
+• Токсичность: {processing_result.emotion_scores.get('toxicity', 0):.1%}
+• Манипуляция: {processing_result.emotion_scores.get('manipulation', 0):.1%}
+"""
+                
+                # Create layers analysis
+                layers_text = f"""🔍 **АНАЛИЗ СКРЫТЫХ СМЫСЛОВ**
+
+📝 **Исходный текст**: {msg_type} сообщение ({len(message_text)} символов)
+
+{processing_result.summary if hasattr(processing_result, 'summary') else 'Основной смысл'}
+
+📍 **Ключевые моменты:**
+{processing_result.bullet_points if hasattr(processing_result, 'bullet_points') else '• Основные темы'}
+
+{processing_result.actions if hasattr(processing_result, 'actions') else ''}
+
+🎭 **Психологический анализ:**
+{processing_result.tone_analysis if hasattr(processing_result, 'tone_analysis') else '• Скрытые мотивы и эмоции'}
+
+{emotion_analysis}
+
+⏰ **Время анализа**: {datetime.fromtimestamp(timestamp_stored).strftime("%H:%M")}
+
+💡 *Этот анализ помогает понять глубинные слои смысла и скрытые мотивы*
+"""
+                
+                await message.answer(layers_text, parse_mode="Markdown")
+                
+                logger.info(f"Layers analysis sent to user {user_id}")
+                
+            except Exception as analysis_error:
+                logger.error(f"Layers analysis failed: {analysis_error}")
+                await message.answer("❌ Ошибка при анализе слоев смысла")
+        else:
+            await message.answer("❌ Система анализа недоступна")
+        
+    except Exception as e:
+        logger.error(f"Layers command failed: {e}")
+        await message.answer("❌ Ошибка при выполнении анализа слоев")
 
 
 @dp.message(Command("debug"))
@@ -848,10 +944,10 @@ async def startup():
     
     logger.info("🚀 BOT STARTUP - Railway Deployment Check")
     logger.info("========================================")
-    logger.info("🆕 VERSION: 2025-08-02 COMMAND-BASED v2.0")
-    logger.info("🆕 FEATURE: Command-based transcript and advice")
-    logger.info("🆕 SIMPLIFIED: No button dependencies, pure commands")
-    logger.info("🆕 COMMANDS: /transcript /advice work reliably")
+    logger.info("🆕 VERSION: 2025-08-02 SIMPLIFIED v3.0")
+    logger.info("🆕 FEATURE: Simplified analysis + deep layers command")
+    logger.info("🆕 SIMPLIFIED: Basic output, complex analysis under /layers")
+    logger.info("🆕 COMMANDS: /transcript /advice /layers work reliably")
     logger.info("========================================")
     logger.info(f"Python version: {sys.version}")
     logger.info(f"Working directory: {os.getcwd()}")
