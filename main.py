@@ -1048,7 +1048,7 @@ async def startup():
     
     logger.info("🚀 BOT STARTUP - Railway Deployment Check")
     logger.info("========================================")
-    logger.info("🆕 VERSION: 2025-08-02 SIMPLIFIED v3.0")
+    logger.info("🆕 VERSION: 2025-08-02 ENHANCED v3.2")
     logger.info("🆕 FEATURE: Simplified analysis + deep layers command")
     logger.info("🆕 SIMPLIFIED: Basic output, complex analysis under /layers")
     logger.info("🆕 COMMANDS: /transcript /advice /layers work reliably")
