@@ -355,13 +355,13 @@ class TextProcessor:
         if result.actions and result.actions.lower() != 'нет' and result.actions.strip():
             output_parts.append(f"👉 **Действия**: {result.actions}")
         
-        # Emotion analysis indicators (as per creative specifications)
-        if result.emotion_levels:
-            emotion_parts = []
-            emotion_parts.append(f"😈 уровень сарказма: {result.emotion_levels.get('sarcasm', 'неизвестно')}")
-            emotion_parts.append(f"☠ уровень токсичности: {result.emotion_levels.get('toxicity', 'неизвестно')}")
-            emotion_parts.append(f"🎣 уровень скрытой манипуляции: {result.emotion_levels.get('manipulation', 'неизвестно')}")
-            output_parts.append("\n".join(emotion_parts))
+        # Emotion analysis indicators - REMOVED from main output (available via /layers command)
+        # if result.emotion_levels:
+        #     emotion_parts = []
+        #     emotion_parts.append(f"😈 уровень сарказма: {result.emotion_levels.get('sarcasm', 'неизвестно')}")
+        #     emotion_parts.append(f"☠ уровень токсичности: {result.emotion_levels.get('toxicity', 'неизвестно')}")
+        #     emotion_parts.append(f"🎣 уровень скрытой манипуляции: {result.emotion_levels.get('manipulation', 'неизвестно')}")
+        #     output_parts.append("\n".join(emotion_parts))
         
         # Tone analysis with structured format
         if result.tone_analysis:
