@@ -100,38 +100,37 @@ async def cmd_start(message: Message):
 @dp.message(Command("help"))
 async def cmd_help(message: Message):
     """Handle /help command"""
-    help_text = """
-📖 **Справка по использованию**
+    help_text = """🤖 **TLDR Buddy - Помощник по анализу сообщений**
 
-**Основные функции:**
-1. **Анализ голосовых сообщений** - отправьте войс для получения текста
-2. **Анализ видео сообщений** - поддержка круглых видео с аудио
-3. **Умное распознавание языка** - автоматическое определение русского/английского
-4. **Обучение предпочтениям** - система запоминает ваш язык для ускорения
+**📋 ОСНОВНЫЕ КОМАНДЫ:**
+• `/start` - Начать работу с ботом
+• `/help` - Показать это меню
+• `/health` - Проверить состояние системы
+• `/stats` - Статистика использования
 
-**Дополнительные команды:**
-• `/transcript` - получить последний транскрипт в виде сообщения
-• `/advice` - получить совет по последнему сообщению
-• `/layers` - анализ скрытых смыслов и мотивов
-• `/debug` - проверить состояние сохраненных сообщений
-• `/health` - проверить статус системы
-• `/stats` - статистика обработки
+**🔍 АНАЛИЗ СООБЩЕНИЙ:**
+• `/transcript` - Получить транскрипт сообщения
+• `/advice` - Получить персональный совет
+• `/анализ` - Психологический анализ (намерения, эмоции, стиль)
+• `/layers` - Глубокий анализ скрытых смыслов и мотивов
 
-**Технические особенности:**
-• Использует OpenAI Whisper для максимальной точности
-• Оптимизирован для быстрой обработки
-• Поддерживает различные аудиоформаты (OGG, MP3, MP4, WAV)
-• Анализ содержания через GPT-4o
+**🛠️ ОТЛАДКА:**
+• `/debug` - Отладочная информация
 
-**Поддерживаемые форматы:**
-• Голосовые сообщения Telegram (OGG Opus) ⚡ быстро
-• Аудиофайлы MP3, MP4, WAV 🔄 с конвертацией
-• Видео сообщения с аудиодорожкой
+**📝 КАК ИСПОЛЬЗОВАТЬ:**
+1. Отправьте голосовое сообщение, видео или текст
+2. Получите основной анализ (резюме + действия)
+3. Используйте команды для детального анализа
+
+**💡 ПОДСКАЗКА:** Основной вывод содержит только практические инсайты. Для глубокого анализа используйте команды!
+
+**🎯 ПОДДЕРЖИВАЕМЫЕ ФОРМАТЫ:**
+• Голосовые сообщения Telegram ⚡ быстро
+• Видео сообщения с аудио
 • Текстовые сообщения для анализа
+• Аудиофайлы MP3, MP4, WAV
 
-Максимальный размер файла: 50 МБ
-Максимальная длительность: 10 минут
-"""
+Максимальный размер: 50 МБ | Длительность: 10 минут"""
     await message.answer(help_text, parse_mode="Markdown")
 
 
@@ -283,6 +282,73 @@ async def cmd_transcript(message: Message):
 3. Снова использовать /transcript"""
         
         await message.answer(error_details, parse_mode="Markdown")
+
+
+@dp.message(Command("анализ"))
+async def cmd_analysis(message: Message):
+    """Handle /анализ command - psychological analysis"""
+    try:
+        if not message.from_user:
+            await message.answer("❌ Ошибка: Информация о пользователе недоступна")
+            return
+            
+        user_id = str(message.from_user.id)
+        
+        # Check if user has recent message
+        if user_id not in user_last_messages:
+            await message.answer("❌ Нет данных для анализа\n\nОтправьте голосовое сообщение или текст, а затем используйте `/анализ`")
+            return
+        
+        # Get stored message data
+        last_msg_data = user_last_messages[user_id]
+        message_text = last_msg_data["text"]
+        timestamp_stored = last_msg_data["timestamp"]
+        msg_type = last_msg_data["type"]
+        
+        # Check if message is too old (1 hour)
+        import time
+        if time.time() - timestamp_stored > 3600:
+            await message.answer("🤖 **Контекст устарел**\n\nПоследнее сообщение было обработано более часа назад.\nОтправьте новое сообщение для получения актуального анализа.")
+            return
+        
+        # Process with text processor for psychological analysis
+        if text_processor:
+            try:
+                processing_result = await text_processor.process_parallel(message_text)
+                
+                # Create psychological analysis output
+                analysis_text = f"""🎭 **ПСИХОЛОГИЧЕСКИЙ АНАЛИЗ**
+
+📝 **Исходный текст**: {msg_type} сообщение ({len(message_text)} символов)
+
+{processing_result.summary if hasattr(processing_result, 'summary') else 'Основной смысл'}
+
+📍 **Ключевые моменты:**
+{processing_result.bullet_points if hasattr(processing_result, 'bullet_points') else '• Основные темы'}
+
+{processing_result.actions if hasattr(processing_result, 'actions') else ''}
+
+🎭 **Психологический анализ:**
+{processing_result.tone_analysis if hasattr(processing_result, 'tone_analysis') else '• Скрытые мотивы и эмоции'}
+
+⏰ **Время анализа**: {datetime.fromtimestamp(timestamp_stored).strftime("%H:%M")}
+
+💡 *Этот анализ помогает понять психологические аспекты сообщения*
+"""
+                
+                await message.answer(analysis_text, parse_mode="Markdown")
+                
+                logger.info(f"Psychological analysis sent to user {user_id}")
+                
+            except Exception as analysis_error:
+                logger.error(f"Psychological analysis failed: {analysis_error}")
+                await message.answer("❌ Ошибка при психологическом анализе")
+        else:
+            await message.answer("❌ Система анализа недоступна")
+        
+    except Exception as e:
+        logger.error(f"Analysis command failed: {e}")
+        await message.answer("❌ Ошибка при выполнении анализа")
 
 
 @dp.message(Command("layers"))
@@ -577,14 +643,26 @@ async def handle_voice_message(message: Message):
                     processing_result = await text_processor.process_parallel(transcribed_text)
                     formatted_output = text_processor.format_output(processing_result)
                     
-                    # Edit the processing message with final result
-                    formatted_output_with_commands = formatted_output + f"""
+                    # Create simplified output - keep practical insights including actions
+                    simplified_output = f"""📝 **Основные мысли**
+
+{processing_result.summary if hasattr(processing_result, 'summary') else 'Анализ завершен'}
+
+📍 **Ключевые моменты:**
+{processing_result.bullet_points if hasattr(processing_result, 'bullet_points') else '• Основные темы выделены'}
+
+👉 **Требуемые действия:**
+{processing_result.actions if hasattr(processing_result, 'actions') and processing_result.actions else '• Действия не требуются'}
+
+⏱️ Обработано за {processing_result.processing_time:.1f}с
 
 📱 **Дополнительные команды:**
-• `/transcript` - скачать транскрипт файлом
-• `/advice` - получить персональный совет"""
+• `/transcript` - получить транскрипт
+• `/advice` - получить совет  
+• `/анализ` - психологический анализ
+• `/layers` - глубокий анализ смыслов"""
                     
-                    await processing_msg.edit_text(formatted_output_with_commands, parse_mode="Markdown")
+                    await processing_msg.edit_text(simplified_output, parse_mode="Markdown")
                     
                 except Exception as text_error:
                     logger.error(f"Text processing error: {text_error}")
@@ -599,8 +677,10 @@ async def handle_voice_message(message: Message):
 ⏱️ Обработка завершена
 
 📱 **Доступные команды:**
-• `/transcript` - скачать транскрипт файлом
-• `/advice` - получить персональный совет
+• `/transcript` - получить транскрипт
+• `/advice` - получить совет
+• `/анализ` - психологический анализ
+• `/layers` - глубокий анализ смыслов
 """
                     await processing_msg.edit_text(fallback_text, parse_mode="Markdown")
             else:
@@ -615,8 +695,10 @@ async def handle_voice_message(message: Message):
 ⏱️ Обработка завершена
 
 📱 **Доступные команды:**
-• `/transcript` - скачать транскрипт файлом
-• `/advice` - получить персональный совет
+• `/transcript` - получить транскрипт
+• `/advice` - получить совет
+• `/анализ` - психологический анализ
+• `/layers` - глубокий анализ смыслов
 """
                 await processing_msg.edit_text(fallback_text, parse_mode="Markdown")
             
@@ -709,8 +791,10 @@ async def handle_video_note(message: Message):
 ⏱️ Обработка завершена
 
 📱 **Доступные команды:**
-• `/transcript` - скачать транскрипт файлом
-• `/advice` - получить персональный совет
+• `/transcript` - получить транскрипт
+• `/advice` - получить совет
+• `/анализ` - психологический анализ
+• `/layers` - глубокий анализ смыслов
 """
                     await processing_msg.edit_text(fallback_text, parse_mode="Markdown")
             else:
@@ -725,8 +809,10 @@ async def handle_video_note(message: Message):
 ⏱️ Обработка завершена
 
 📱 **Доступные команды:**
-• `/transcript` - скачать транскрипт файлом
-• `/advice` - получить персональный совет
+• `/transcript` - получить транскрипт
+• `/advice` - получить совет
+• `/анализ` - психологический анализ
+• `/layers` - глубокий анализ смыслов
 """
                 await processing_msg.edit_text(fallback_text, parse_mode="Markdown")
             
@@ -789,13 +875,26 @@ async def handle_text_message(message: Message):
                 processing_result = await text_processor.process_parallel(text_content)
                 formatted_output = text_processor.format_output(processing_result)
                 
-                # Edit the processing message with final result
-                formatted_output_with_commands = formatted_output + f"""
+                # Create simplified output for text messages
+                simplified_output = f"""📝 **Основные мысли**
+
+{processing_result.summary if hasattr(processing_result, 'summary') else 'Анализ завершен'}
+
+📍 **Ключевые моменты:**
+{processing_result.bullet_points if hasattr(processing_result, 'bullet_points') else '• Основные темы выделены'}
+
+👉 **Требуемые действия:**
+{processing_result.actions if hasattr(processing_result, 'actions') and processing_result.actions else '• Действия не требуются'}
+
+⏱️ Обработано за {processing_result.processing_time:.1f}с
 
 📱 **Дополнительные команды:**
-• `/advice` - получить персональный совет"""
+• `/transcript` - получить транскрипт
+• `/advice` - получить совет  
+• `/анализ` - психологический анализ
+• `/layers` - глубокий анализ смыслов"""
                 
-                await processing_msg.edit_text(formatted_output_with_commands, parse_mode="Markdown")
+                await processing_msg.edit_text(simplified_output, parse_mode="Markdown")
                 
             except Exception as text_error:
                 logger.error(f"Text processing error: {text_error}")
@@ -810,7 +909,10 @@ async def handle_text_message(message: Message):
 ⏱️ Обработка завершена
 
 📱 **Доступные команды:**
-• `/advice` - получить персональный совет
+• `/transcript` - получить транскрипт
+• `/advice` - получить совет
+• `/анализ` - психологический анализ
+• `/layers` - глубокий анализ смыслов
 """
                 await processing_msg.edit_text(fallback_text, parse_mode="Markdown")
         else:
@@ -885,8 +987,10 @@ async def handle_button_callback(callback_query: CallbackQuery):
             # No button functionality without Redis - inform user about commands
             await callback_query.answer("""
 🤖 Используйте команды:
-• /transcript - скачать файл
+• /transcript - получить транскрипт
 • /advice - получить совет
+• /анализ - психологический анализ
+• /layers - глубокий анализ
 """, show_alert=True)
                 
     except Exception as e:

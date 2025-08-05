@@ -363,19 +363,19 @@ class TextProcessor:
         #     emotion_parts.append(f"🎣 уровень скрытой манипуляции: {result.emotion_levels.get('manipulation', 'неизвестно')}")
         #     output_parts.append("\n".join(emotion_parts))
         
-        # Tone analysis with structured format
-        if result.tone_analysis:
-            tone_lines = []
-            if result.tone_analysis.get('hidden_intent'):
-                tone_lines.append(f"  🎯 **Намерения**: {result.tone_analysis['hidden_intent']}")
-            if result.tone_analysis.get('dominant_emotion'):
-                tone_lines.append(f"  😄 **Эмоция**: {result.tone_analysis['dominant_emotion']}")
-            if result.tone_analysis.get('interaction_style'):
-                tone_lines.append(f"  💬 **Стиль**: {result.tone_analysis['interaction_style']}")
-            
-            if tone_lines:
-                tone_text = "\n".join(tone_lines)
-                output_parts.append(f"🎭 **Психологический анализ**:\n{tone_text}")
+        # Tone analysis - REMOVED from main output (available via /анализ command)
+        # if result.tone_analysis:
+        #     tone_lines = []
+        #     if result.tone_analysis.get('hidden_intent'):
+        #         tone_lines.append(f"  🎯 **Намерения**: {result.tone_analysis['hidden_intent']}")
+        #     if result.tone_analysis.get('dominant_emotion'):
+        #         tone_lines.append(f"  😄 **Эмоция**: {result.tone_analysis['dominant_emotion']}")
+        #     if result.tone_analysis.get('interaction_style'):
+        #         tone_lines.append(f"  💬 **Стиль**: {result.tone_analysis['interaction_style']}")
+        #     
+        #     if tone_lines:
+        #         tone_text = "\n".join(tone_lines)
+        #         output_parts.append(f"🎭 **Психологический анализ**:\n{tone_text}")
         
         # Processing time
         if result.processing_time:
