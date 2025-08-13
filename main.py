@@ -10,6 +10,7 @@ import os
 import sys
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
@@ -29,6 +30,9 @@ from text_processor import TextProcessor
 import redis.asyncio as redis
 from button_ui_manager import ButtonUIManager, create_button_ui_manager
 from archetype_system import ArchetypeSystem, create_archetype_system
+
+# Import SummaryEngine for two-mode summarization
+from summary_engine import SummaryEngine, ContentType, create_summary_engine
 
 # Import process management for single-instance enforcement
 from process_manager import enforce_single_instance
@@ -65,9 +69,51 @@ text_processor = None
 redis_client = None
 archetype_system = None
 button_ui_manager = None
+summary_engine = None
 
 # Simple in-memory storage for last messages (no Redis needed)
 user_last_messages = {}  # {user_id: {"text": str, "timestamp": float, "type": "voice|text"}}
+
+# Helper function for SummaryEngine integration
+async def process_with_summary_engine(text: str, content_type: ContentType, duration: Optional[int] = None) -> Optional[str]:
+    """
+    Process text with SummaryEngine if available, otherwise return None
+    
+    Args:
+        text: Text to process
+        content_type: Type of content
+        duration: Duration in seconds (for heuristics)
+        
+    Returns:
+        Formatted summary if SummaryEngine is available and successful, None otherwise
+    """
+    if not summary_engine or not summary_engine.enabled:
+        return None
+    
+    try:
+        result = await summary_engine.process_summary(
+            text=text,
+            content_type=content_type,
+            duration=duration
+        )
+        
+        if result.success:
+            mode_label = "CHAT" if result.mode.value == "chat" else "LONGFORM"
+            return f"""📊 **TLDRBuddy Анализ** ({mode_label})
+
+{result.summary}
+
+⏱️ Обработано за {result.processing_time:.1f}с
+🎯 Режим: {mode_label}
+📊 Токены: {result.token_count}
+"""
+        else:
+            logger.warning(f"SummaryEngine failed: {result.error_message}")
+            return None
+            
+    except Exception as e:
+        logger.error(f"SummaryEngine processing error: {e}")
+        return None
 
 
 @dp.message(Command("start"))
@@ -637,14 +683,25 @@ async def handle_voice_message(message: Message):
             # Update processing message
             await processing_msg.edit_text("🔄 Анализируем содержание...")
             
-            # Process text through DEFAULT and TONE modes
-            if text_processor:
-                try:
-                    processing_result = await text_processor.process_parallel(transcribed_text)
-                    formatted_output = text_processor.format_output(processing_result)
-                    
-                    # Create simplified output - keep practical insights including actions
-                    simplified_output = f"""📝 **Основные мысли**
+            # Try SummaryEngine first if available
+            summary_result = await process_with_summary_engine(
+                transcribed_text, 
+                ContentType.TELEGRAM_VOICE, 
+                duration
+            )
+            
+            if summary_result:
+                # Use SummaryEngine result
+                await processing_msg.edit_text(summary_result, parse_mode="Markdown")
+            else:
+                # Fallback to original text processor
+                if text_processor:
+                    try:
+                        processing_result = await text_processor.process_parallel(transcribed_text)
+                        formatted_output = text_processor.format_output(processing_result)
+                        
+                        # Create simplified output - keep practical insights including actions
+                        simplified_output = f"""📝 **Основные мысли**
 
 {processing_result.summary if hasattr(processing_result, 'summary') else 'Анализ завершен'}
 
@@ -657,17 +714,17 @@ async def handle_voice_message(message: Message):
 ⏱️ Обработано за {processing_result.processing_time:.1f}с
 
 📱 **Дополнительные команды:**
-• `/transcript` - получить транскрипт
-• `/advice` - получить совет  
-• `/анализ` - психологический анализ
-• `/layers` - глубокий анализ смыслов"""
-                    
-                    await processing_msg.edit_text(simplified_output, parse_mode="Markdown")
-                    
-                except Exception as text_error:
-                    logger.error(f"Text processing error: {text_error}")
-                    # Fallback to transcription only
-                    fallback_text = f"""
+• `/transcript` - получить транскрипт сообщения
+• `/advice` - получить персональный совет от архетипа
+• `/анализ` - психологический анализ (намерения, эмоции, стиль)
+• `/layers` - глубокий анализ скрытых смыслов и мотивов"""
+                        
+                        await processing_msg.edit_text(simplified_output, parse_mode="Markdown")
+                        
+                    except Exception as text_error:
+                        logger.error(f"Text processing error: {text_error}")
+                        # Fallback to transcription only
+                        fallback_text = f"""
 📝 **Результат распознавания речи**
 
 **Текст:**
@@ -677,15 +734,15 @@ async def handle_voice_message(message: Message):
 ⏱️ Обработка завершена
 
 📱 **Доступные команды:**
-• `/transcript` - получить транскрипт
-• `/advice` - получить совет
-• `/анализ` - психологический анализ
-• `/layers` - глубокий анализ смыслов
+• `/transcript` - получить транскрипт сообщения
+• `/advice` - получить персональный совет от архетипа
+• `/анализ` - психологический анализ (намерения, эмоции, стиль)
+• `/layers` - глубокий анализ скрытых смыслов и мотивов
 """
-                    await processing_msg.edit_text(fallback_text, parse_mode="Markdown")
-            else:
-                # Text processor not initialized - fallback to transcription only
-                fallback_text = f"""
+                        await processing_msg.edit_text(fallback_text, parse_mode="Markdown")
+                else:
+                    # Text processor not initialized - fallback to transcription only
+                    fallback_text = f"""
 📝 **Результат распознавания речи**
 
 **Текст:**
@@ -695,12 +752,12 @@ async def handle_voice_message(message: Message):
 ⏱️ Обработка завершена
 
 📱 **Доступные команды:**
-• `/transcript` - получить транскрипт
-• `/advice` - получить совет
-• `/анализ` - психологический анализ
-• `/layers` - глубокий анализ смыслов
+• `/transcript` - получить транскрипт сообщения
+• `/advice` - получить персональный совет от архетипа
+• `/анализ` - психологический анализ (намерения, эмоции, стиль)
+• `/layers` - глубокий анализ скрытых смыслов и мотивов
 """
-                await processing_msg.edit_text(fallback_text, parse_mode="Markdown")
+                    await processing_msg.edit_text(fallback_text, parse_mode="Markdown")
             
         except SpeechPipelineError as e:
             logger.error(f"Speech pipeline error: {e}")
@@ -763,25 +820,48 @@ async def handle_video_note(message: Message):
             # Update processing message
             await processing_msg.edit_text("🔄 Анализируем содержание...")
             
-            # Process text through DEFAULT and TONE modes
-            if text_processor:
-                try:
-                    processing_result = await text_processor.process_parallel(transcribed_text)
-                    formatted_output = text_processor.format_output(processing_result)
-                    
-                    # Edit the processing message with final result
-                    formatted_output_with_commands = formatted_output + f"""
+            # Try SummaryEngine first if available
+            summary_result = await process_with_summary_engine(
+                transcribed_text, 
+                ContentType.TELEGRAM_VIDEO_NOTE, 
+                duration
+            )
+            
+            if summary_result:
+                # Use SummaryEngine result
+                await processing_msg.edit_text(summary_result, parse_mode="Markdown")
+            else:
+                # Fallback to original text processor
+                if text_processor:
+                    try:
+                        processing_result = await text_processor.process_parallel(transcribed_text)
+                        formatted_output = text_processor.format_output(processing_result)
+                        
+                        # Create simplified output for video notes
+                        simplified_output = f"""📝 **Основные мысли**
+
+{processing_result.summary if hasattr(processing_result, 'summary') else 'Анализ завершен'}
+
+📍 **Ключевые моменты:**
+{processing_result.bullet_points if hasattr(processing_result, 'bullet_points') else '• Основные темы выделены'}
+
+👉 **Требуемые действия:**
+{processing_result.actions if hasattr(processing_result, 'actions') and processing_result.actions else '• Действия не требуются'}
+
+⏱️ Обработано за {processing_result.processing_time:.1f}с
 
 📱 **Дополнительные команды:**
-• `/transcript` - скачать транскрипт файлом
-• `/advice` - получить персональный совет"""
-                    
-                    await processing_msg.edit_text(formatted_output_with_commands, parse_mode="Markdown")
-                    
-                except Exception as text_error:
-                    logger.error(f"Text processing error: {text_error}")
-                    # Fallback to transcription only
-                    fallback_text = f"""
+• `/transcript` - получить транскрипт сообщения
+• `/advice` - получить персональный совет от архетипа
+• `/анализ` - психологический анализ (намерения, эмоции, стиль)
+• `/layers` - глубокий анализ скрытых смыслов и мотивов"""
+                        
+                        await processing_msg.edit_text(simplified_output, parse_mode="Markdown")
+                        
+                    except Exception as text_error:
+                        logger.error(f"Text processing error: {text_error}")
+                        # Fallback to transcription only
+                        fallback_text = f"""
 📝 **Результат распознавания видео сообщения**
 
 **Текст:**
@@ -791,15 +871,15 @@ async def handle_video_note(message: Message):
 ⏱️ Обработка завершена
 
 📱 **Доступные команды:**
-• `/transcript` - получить транскрипт
-• `/advice` - получить совет
-• `/анализ` - психологический анализ
-• `/layers` - глубокий анализ смыслов
+• `/transcript` - получить транскрипт сообщения
+• `/advice` - получить персональный совет от архетипа
+• `/анализ` - психологический анализ (намерения, эмоции, стиль)
+• `/layers` - глубокий анализ скрытых смыслов и мотивов
 """
-                    await processing_msg.edit_text(fallback_text, parse_mode="Markdown")
-            else:
-                # Text processor not initialized - fallback to transcription only
-                fallback_text = f"""
+                        await processing_msg.edit_text(fallback_text, parse_mode="Markdown")
+                else:
+                    # Text processor not initialized - fallback to transcription only
+                    fallback_text = f"""
 📝 **Результат распознавания видео сообщения**
 
 **Текст:**
@@ -809,12 +889,12 @@ async def handle_video_note(message: Message):
 ⏱️ Обработка завершена
 
 📱 **Доступные команды:**
-• `/transcript` - получить транскрипт
-• `/advice` - получить совет
-• `/анализ` - психологический анализ
-• `/layers` - глубокий анализ смыслов
+• `/transcript` - получить транскрипт сообщения
+• `/advice` - получить персональный совет от архетипа
+• `/анализ` - психологический анализ (намерения, эмоции, стиль)
+• `/layers` - глубокий анализ скрытых смыслов и мотивов
 """
-                await processing_msg.edit_text(fallback_text, parse_mode="Markdown")
+                    await processing_msg.edit_text(fallback_text, parse_mode="Markdown")
             
         except SpeechPipelineError as e:
             logger.error(f"Video note processing error: {e}")
@@ -889,10 +969,10 @@ async def handle_text_message(message: Message):
 ⏱️ Обработано за {processing_result.processing_time:.1f}с
 
 📱 **Дополнительные команды:**
-• `/transcript` - получить транскрипт
-• `/advice` - получить совет  
-• `/анализ` - психологический анализ
-• `/layers` - глубокий анализ смыслов"""
+• `/transcript` - получить транскрипт сообщения
+• `/advice` - получить персональный совет от архетипа
+• `/анализ` - психологический анализ (намерения, эмоции, стиль)
+• `/layers` - глубокий анализ скрытых смыслов и мотивов"""
                 
                 await processing_msg.edit_text(simplified_output, parse_mode="Markdown")
                 
@@ -924,6 +1004,194 @@ async def handle_text_message(message: Message):
     except Exception as e:
         logger.error(f"Error processing text message: {e}")
         await message.answer("❌ Неожиданная ошибка при обработке текста")
+
+
+@dp.message(F.document)
+async def handle_document(message: Message):
+    """Handle document uploads (PDF, DOC, etc.) with SummaryEngine"""
+    try:
+        if not message.document:
+            await message.reply("❌ Ошибка: Документ не найден")
+            return
+            
+        if not message.from_user:
+            await message.reply("❌ Ошибка: Информация о пользователе недоступна")
+            return
+            
+        user_id = str(message.from_user.id)
+        file_id = message.document.file_id
+        file_name = message.document.file_name
+        file_size = message.document.file_size
+        
+        logger.info(f"Received document from user {user_id}, "
+                   f"file: {file_name}, size: {file_size} bytes")
+        
+        # Check if SummaryEngine is available
+        if not summary_engine or not summary_engine.enabled:
+            await message.reply(
+                "📄 Обработка документов пока недоступна. "
+                "Попробуйте отправить текст документа в сообщении."
+            )
+            return
+        
+        # Check file size (limit to 20MB)
+        if file_size and file_size > 20 * 1024 * 1024:
+            await message.reply("❌ Файл слишком большой. Максимальный размер: 20MB")
+            return
+        
+        # Check file type
+        supported_extensions = ['.pdf', '.doc', '.docx', '.txt', '.rtf']
+        file_ext = Path(file_name).suffix.lower() if file_name else ''
+        
+        if file_ext not in supported_extensions:
+            await message.reply(
+                f"❌ Неподдерживаемый тип файла: {file_ext}\n"
+                f"Поддерживаемые форматы: {', '.join(supported_extensions)}"
+            )
+            return
+        
+        # Send processing notification
+        processing_msg = await message.answer("📄 Обрабатываю документ...")
+        
+        try:
+            # For now, we'll extract text from the document
+            # In a full implementation, you'd need to add document text extraction
+            # For now, we'll use a placeholder approach
+            
+            # Download the file
+            file = await bot.get_file(file_id)
+            file_path = file.file_path
+            
+            # Extract text (placeholder - in real implementation, you'd use libraries like PyPDF2, python-docx)
+            # For now, we'll create a placeholder text
+            placeholder_text = f"""
+Документ: {file_name}
+Размер: {file_size} байт
+Тип: {file_ext}
+
+Это заглушка для обработки документа. В полной реализации здесь будет извлеченный текст из файла.
+
+Для тестирования SummaryEngine можно использовать этот текст как пример длинного контента для LONGFORM режима.
+"""
+            
+            # Process with SummaryEngine
+            result = await summary_engine.process_summary(
+                text=placeholder_text,
+                content_type=ContentType.TELEGRAM_DOCUMENT
+            )
+            
+            if result.success:
+                # Format output for LONGFORM mode
+                output = f"""📄 **Анализ документа: {file_name}**
+
+{result.summary}
+
+⏱️ Обработано за {result.processing_time:.1f}с
+🎯 Режим: {result.mode.value.upper()}
+📊 Токены: {result.token_count}
+"""
+                
+                await processing_msg.edit_text(output, parse_mode="Markdown")
+            else:
+                # Fallback response
+                fallback = summary_engine.get_fallback_response(placeholder_text)
+                await processing_msg.edit_text(fallback, parse_mode="Markdown")
+                
+        except Exception as doc_error:
+            logger.error(f"Document processing error: {doc_error}")
+            await processing_msg.edit_text(
+                f"❌ Ошибка при обработке документа: {str(doc_error)}"
+            )
+            
+    except Exception as e:
+        logger.error(f"Error processing document: {e}")
+        await message.answer("❌ Неожиданная ошибка при обработке документа")
+
+
+@dp.message(F.video)
+async def handle_video(message: Message):
+    """Handle video files with SummaryEngine"""
+    try:
+        if not message.video:
+            await message.reply("❌ Ошибка: Видео не найдено")
+            return
+            
+        if not message.from_user:
+            await message.reply("❌ Ошибка: Информация о пользователе недоступна")
+            return
+            
+        user_id = str(message.from_user.id)
+        file_id = message.video.file_id
+        duration = message.video.duration
+        file_size = message.video.file_size
+        
+        logger.info(f"Received video from user {user_id}, "
+                   f"duration: {duration}s, size: {file_size} bytes")
+        
+        # Check if SummaryEngine is available
+        if not summary_engine or not summary_engine.enabled:
+            await message.reply(
+                "🎥 Обработка видео файлов пока недоступна. "
+                "Попробуйте отправить видео заметку (круглое видео)."
+            )
+            return
+        
+        # Check file size (limit to 50MB)
+        if file_size and file_size > 50 * 1024 * 1024:
+            await message.reply("❌ Видео слишком большое. Максимальный размер: 50MB")
+            return
+        
+        # Send processing notification
+        processing_msg = await message.answer("🎥 Обрабатываю видео...")
+        
+        try:
+            # For now, we'll use the speech pipeline to extract audio and transcribe
+            # In a full implementation, you might want to use video processing libraries
+            
+            if speech_pipeline:
+                # Extract audio and transcribe
+                transcribed_text = await speech_pipeline.process_voice_message(
+                    file_id, user_id, bot=bot, chat_id=str(message.chat.id)
+                )
+                
+                # Process with SummaryEngine
+                result = await summary_engine.process_summary(
+                    text=transcribed_text,
+                    content_type=ContentType.TELEGRAM_VIDEO,
+                    duration=duration
+                )
+                
+                if result.success:
+                    # Format output for LONGFORM mode
+                    output = f"""🎥 **Анализ видео**
+
+{result.summary}
+
+⏱️ Обработано за {result.processing_time:.1f}с
+🎯 Режим: {result.mode.value.upper()}
+📊 Токены: {result.token_count}
+⏱️ Длительность видео: {duration}с
+"""
+                    
+                    await processing_msg.edit_text(output, parse_mode="Markdown")
+                else:
+                    # Fallback response
+                    fallback = summary_engine.get_fallback_response(transcribed_text)
+                    await processing_msg.edit_text(fallback, parse_mode="Markdown")
+            else:
+                await processing_msg.edit_text(
+                    "❌ Система обработки речи не инициализирована"
+                )
+                
+        except Exception as video_error:
+            logger.error(f"Video processing error: {video_error}")
+            await processing_msg.edit_text(
+                f"❌ Ошибка при обработке видео: {str(video_error)}"
+            )
+            
+    except Exception as e:
+        logger.error(f"Error processing video: {e}")
+        await message.answer("❌ Неожиданная ошибка при обработке видео")
 
 
 @dp.message(Command("list_modes"))
@@ -1044,7 +1312,7 @@ async def health_check(request):
 
 async def startup():
     """Initialize the bot systems"""
-    global openai_client, text_processor, speech_pipeline, redis_client, archetype_system, button_ui_manager
+    global openai_client, text_processor, speech_pipeline, redis_client, archetype_system, button_ui_manager, summary_engine
     
     logger.info("🚀 BOT STARTUP - Railway Deployment Check")
     logger.info("========================================")
@@ -1137,6 +1405,24 @@ async def startup():
             logger.info(f"🔄 Button UI Manager: Using FALLBACK mode (Redis: {redis_client is not None}, Archetype: {archetype_system is not None})")
             logger.info("✅ Fallback buttons will provide basic advice and transcript functionality")
         
+        # Initialize SummaryEngine for two-mode summarization
+        logger.info("Initializing SummaryEngine...")
+        if text_processor and text_processor.client:
+            try:
+                summary_engine = create_summary_engine(text_processor.client)
+                # Enable SummaryEngine if feature flag is set
+                if os.getenv('TLDRBUDDY_ENABLED', 'false').lower() == 'true':
+                    summary_engine.enable()
+                    logger.info("✅ SummaryEngine initialized and ENABLED")
+                else:
+                    logger.info("✅ SummaryEngine initialized but DISABLED (set TLDRBUDDY_ENABLED=true to enable)")
+            except Exception as se_error:
+                logger.error(f"SummaryEngine initialization failed: {se_error}")
+                summary_engine = None
+        else:
+            summary_engine = None
+            logger.error("SummaryEngine disabled (no OpenAI client)")
+        
         # Summarize startup status
         logger.info("=== STARTUP COMPLETED SUCCESSFULLY ===")
         logger.info(f"🎤 Speech Pipeline: {'✅ Ready' if speech_pipeline else '❌ Failed'}")
@@ -1144,6 +1430,7 @@ async def startup():
         logger.info(f"🔗 Redis Client: {'✅ Connected' if redis_client else '❌ Fallback mode'}")
         logger.info(f"🤖 Archetype System: {'✅ Ready' if archetype_system else '❌ Disabled'}")
         logger.info(f"🎛️ Button UI Manager: {'✅ Full features' if button_ui_manager else '✅ Fallback mode'}")
+        logger.info(f"📊 SummaryEngine: {'✅ Enabled' if summary_engine and summary_engine.enabled else '✅ Disabled' if summary_engine else '❌ Failed'}")
         logger.info("===========================================")
         
     except Exception as e:
