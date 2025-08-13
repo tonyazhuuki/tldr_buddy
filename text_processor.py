@@ -343,14 +343,29 @@ class TextProcessor:
                     continue
                     
                 # Support both old and new formats for backward compatibility
-                if line.startswith('🎯 СКРЫТЫЕ НАМЕРЕНИЯ:') or line.startswith('СКРЫТЫЕ НАМЕРЕНИЯ:'):
-                    intent_text = line.replace('🎯 СКРЫТЫЕ НАМЕРЕНИЯ:', '').replace('СКРЫТЫЕ НАМЕРЕНИЯ:', '').strip()
+                if line.startswith('🎯 СКРЫТОЕ НАМЕРЕНИЕ:') or line.startswith('🎯 СКРЫТЫЕ НАМЕРЕНИЯ:') or line.startswith('СКРЫТЫЕ НАМЕРЕНИЯ:'):
+                    intent_text = line.replace('🎯 СКРЫТОЕ НАМЕРЕНИЕ:', '').replace('🎯 СКРЫТЫЕ НАМЕРЕНИЯ:', '').replace('СКРЫТЫЕ НАМЕРЕНИЯ:', '').strip()
                     tone_data['hidden_intent'] = intent_text
-                elif line.startswith('😄 ДОМИНИРУЮЩАЯ ЭМОЦИЯ:') or line.startswith('ДОМИНИРУЮЩАЯ ЭМОЦИЯ:'):
-                    emotion_text = line.replace('😄 ДОМИНИРУЮЩАЯ ЭМОЦИЯ:', '').replace('ДОМИНИРУЮЩАЯ ЭМОЦИЯ:', '').strip()
+                elif line.startswith('😶‍🌫️ ДОМИНИРУЮЩАЯ ЭМОЦИЯ:') or line.startswith('😄 ДОМИНИРУЮЩАЯ ЭМОЦИЯ:') or line.startswith('ДОМИНИРУЮЩАЯ ЭМОЦИЯ:'):
+                    emotion_text = line.replace('😶‍🌫️ ДОМИНИРУЮЩАЯ ЭМОЦИЯ:', '').replace('😄 ДОМИНИРУЮЩАЯ ЭМОЦИЯ:', '').replace('ДОМИНИРУЮЩАЯ ЭМОЦИЯ:', '').strip()
                     tone_data['dominant_emotion'] = emotion_text
-                elif line.startswith('💬 СТИЛЬ ВЗАИМОДЕЙСТВИЯ:') or line.startswith('СТИЛЬ ВЗАИМОДЕЙСТВИЯ:'):
-                    style_text = line.replace('💬 СТИЛЬ ВЗАИМОДЕЙСТВИЯ:', '').replace('СТИЛЬ ВЗАИМОДЕЙСТВИЯ:', '').strip()
+                elif line.startswith('🗣️ СТИЛЬ ВЗАИМОДЕЙСТВИЯ:') or line.startswith('💬 СТИЛЬ ВЗАИМОДЕЙСТВИЯ:') or line.startswith('СТИЛЬ ВЗАИМОДЕЙСТВИЯ:'):
+                    style_text = line.replace('🗣️ СТИЛЬ ВЗАИМОДЕЙСТВИЯ:', '').replace('💬 СТИЛЬ ВЗАИМОДЕЙСТВИЯ:', '').replace('СТИЛЬ ВЗАИМОДЕЙСТВИЯ:', '').strip()
+                    tone_data['interaction_style'] = style_text
+                elif line.startswith('🔎 ПРИЗНАКИ (цитаты):'):
+                    # Skip quotes section for now, keep in interaction_style if needed
+                    current_section = 'quotes'
+                elif line.startswith('🎛 УВЕРЕННОСТЬ:'):
+                    # Skip confidence section for now
+                    current_section = 'confidence'
+                elif line.startswith('• 🎯 СКРЫТОЕ НАМЕРЕНИЕ:'):
+                    intent_text = line.replace('• 🎯 СКРЫТОЕ НАМЕРЕНИЕ:', '').strip()
+                    tone_data['hidden_intent'] = intent_text
+                elif line.startswith('• 😶‍🌫️ ДОМИНИРУЮЩАЯ ЭМОЦИЯ:'):
+                    emotion_text = line.replace('• 😶‍🌫️ ДОМИНИРУЮЩАЯ ЭМОЦИЯ:', '').strip()
+                    tone_data['dominant_emotion'] = emotion_text
+                elif line.startswith('• 🗣️ СТИЛЬ ВЗАИМОДЕЙСТВИЯ:'):
+                    style_text = line.replace('• 🗣️ СТИЛЬ ВЗАИМОДЕЙСТВИЯ:', '').strip()
                     tone_data['interaction_style'] = style_text
             
             return tone_data if tone_data else None
@@ -412,13 +427,13 @@ class TextProcessor:
         #     if result.tone_analysis.get('hidden_intent'):
         #         tone_lines.append(f"  🎯 **Намерения**: {result.tone_analysis['hidden_intent']}")
         #     if result.tone_analysis.get('dominant_emotion'):
-        #         tone_lines.append(f"  😄 **Эмоция**: {result.tone_analysis['dominant_emotion']}")
+        #         tone_lines.append(f"  😶‍🌫️ **Эмоция**: {result.tone_analysis['dominant_emotion']}")
         #     if result.tone_analysis.get('interaction_style'):
-        #         tone_lines.append(f"  💬 **Стиль**: {result.tone_analysis['interaction_style']}")
+        #         tone_lines.append(f"  🗣️ **Стиль**: {result.tone_analysis['interaction_style']}")
         #     
         #     if tone_lines:
         #         tone_text = "\n".join(tone_lines)
-        #         output_parts.append(f"🎭 **Психологический анализ**:\n{tone_text}")
+        #         output_parts.append(f"🧠 **Психологический анализ**:\n{tone_text}")
         
         # Processing time
         if result.processing_time:
