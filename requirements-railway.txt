@@ -33,4 +33,7 @@ psutil==7.0.0
 filelock==3.13.1
 
 # JSON Schema Validation
-jsonschema==4.19.2 
+jsonschema==4.19.2
+
+# Timezone Support
+pytz==2024.1 
