@@ -14,7 +14,7 @@ from typing import Optional
 
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
-from aiogram.types import Message, ErrorEvent
+from aiogram.types import Message, ErrorEvent, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from aiohttp import web
 from dotenv import load_dotenv
@@ -108,6 +108,69 @@ async def process_with_summary_engine(text: str, content_type: ContentType, dura
         return None
 
 
+def create_transcript_buttons() -> InlineKeyboardMarkup:
+    """Create inline keyboard with transcript buttons"""
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="📝 Показать транскрипт", callback_data="show_transcript"),
+            InlineKeyboardButton(text="📄 Скачать .txt", callback_data="download_txt")
+        ]
+    ])
+    return keyboard
+
+
+async def send_transcript_text(message: Message, text: str, user_id: str):
+    """Send transcript as text or file based on length"""
+    if len(text) <= 4096:
+        # Send as text message
+        transcript_text = f"""📝 **ТРАНСКРИПТ**
+
+{text}
+
+---
+💡 *Для копирования - выделите текст выше*"""
+        await message.answer(transcript_text, parse_mode="Markdown")
+    else:
+        # Send as file
+        from io import BytesIO
+        import time
+        
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        filename = f"transcript_{user_id}_{timestamp}.txt"
+        
+        file_content = f"""ТРАНСКРИПТ СООБЩЕНИЯ
+Дата: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+Пользователь: {user_id}
+
+{text}
+
+---
+Создано ботом TLDR Buddy"""
+        
+        file_obj = BytesIO(file_content.encode('utf-8'))
+        file_obj.name = filename
+        
+        await message.answer_document(
+            document=file_obj,
+            caption="📄 **Транскрипт отправлен как файл**\n\nФайл содержит полный текст сообщения."
+        )
+
+
+async def get_last_message_data(user_id: str) -> dict:
+    """Get last message data for user"""
+    if user_id not in user_last_messages:
+        return None
+    
+    last_msg_data = user_last_messages[user_id]
+    
+    # Check if message is not too old (1 hour limit)
+    import time
+    if time.time() - last_msg_data["timestamp"] > 3600:
+        return None
+    
+    return last_msg_data
+
+
 @dp.message(Command("start"))
 async def cmd_start(message: Message):
     """Handle /start command"""
@@ -147,6 +210,7 @@ async def cmd_help(message: Message):
 • `/stats` - Статистика использования
 
 **🔍 АНАЛИЗ СООБЩЕНИЙ:**
+• `/summary` - Получить саммари последнего сообщения
 • `/transcript` - Получить транскрипт сообщения
 • `/advice` - Получить персональный совет
 • `/анализ` - Психологический анализ (намерения, эмоции, стиль)
@@ -232,6 +296,91 @@ async def cmd_stats(message: Message):
         await message.answer("❌ Ошибка при получении статистики")
 
 
+@dp.message(Command("summary"))
+async def cmd_summary(message: Message):
+    """Handle /summary command - return summary for last message"""
+    try:
+        if not message.from_user:
+            await message.answer("❌ Ошибка: Информация о пользователе недоступна")
+            return
+            
+        user_id = str(message.from_user.id)
+        
+        # Get last message data
+        last_msg_data = await get_last_message_data(user_id)
+        if not last_msg_data:
+            await message.answer("""
+📄 **Саммари недоступно**
+
+Сначала отправьте голосовое сообщение, видео или текст для анализа, 
+затем используйте `/summary` для получения саммари.
+
+💡 **Как использовать:**
+1. Отправьте голосовое сообщение, видео или текст
+2. Подождите обработки  
+3. Введите `/summary` для получения саммари
+""", parse_mode="Markdown")
+            return
+        
+        # Get the text and try to process with SummaryEngine
+        text = last_msg_data["text"]
+        msg_type = last_msg_data["type"]
+        
+        # Try SummaryEngine first
+        if summary_engine and summary_engine.enabled:
+            content_type = ContentType.TELEGRAM_VOICE if msg_type == "voice" else ContentType.TELEGRAM_VIDEO_NOTE if msg_type == "video" else ContentType.TEXT_INPUT
+            
+            result = await summary_engine.process_summary(
+                text=text,
+                content_type=content_type
+            )
+            
+            if result.success:
+                await message.answer(
+                    result.summary, 
+                    parse_mode="Markdown",
+                    reply_markup=create_transcript_buttons()
+                )
+                return
+        
+        # Fallback to text processor
+        if text_processor:
+            try:
+                processing_result = await text_processor.process_parallel(text)
+                
+                # Create simplified output
+                simplified_output = f"""📝 **Саммари последнего сообщения**
+
+{processing_result.summary if hasattr(processing_result, 'summary') else 'Анализ завершен'}
+
+📍 **Ключевые моменты:**
+{processing_result.bullet_points if hasattr(processing_result, 'bullet_points') else '• Основные темы выделены'}
+
+👉 **Требуемые действия:**
+{processing_result.actions if hasattr(processing_result, 'actions') and processing_result.actions else '• Действия не требуются'}"""
+                
+                await message.answer(
+                    simplified_output, 
+                    parse_mode="Markdown",
+                    reply_markup=create_transcript_buttons()
+                )
+                return
+                
+            except Exception as e:
+                logger.error(f"Text processing error in summary command: {e}")
+        
+        # Final fallback - just show the text
+        await message.answer(
+            f"📝 **Текст последнего сообщения**\n\n{text}",
+            parse_mode="Markdown",
+            reply_markup=create_transcript_buttons()
+        )
+        
+    except Exception as e:
+        logger.error(f"Summary command failed: {e}")
+        await message.answer("❌ Ошибка при получении саммари")
+
+
 @dp.message(Command("transcript"))
 async def cmd_transcript(message: Message):
     """Handle /transcript command - download last message as file"""
@@ -274,31 +423,8 @@ async def cmd_transcript(message: Message):
 """, parse_mode="Markdown")
             return
         
-        # Send transcript as message (much simpler and more reliable)
-        timestamp_str = datetime.fromtimestamp(timestamp_stored).strftime("%Y-%m-%d %H:%M:%S")
-        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        
-        transcript_message = f"""📄 **ТРАНСКРИПТ СООБЩЕНИЯ**
-
-📅 **Дата создания**: {current_time}
-👤 **Пользователь**: {user_id}
-📱 **Тип**: {msg_type}
-⏰ **Время обработки**: {timestamp_str}
-
-📝 **СОДЕРЖАНИЕ:**
-```
-{transcript_text.strip()}
-```
-
-📊 **Статистика**:
-• Размер: {len(transcript_text)} символов
-• Слов: ~{len(transcript_text.split())}
-• Команда: /transcript
-
----
-💡 *Для копирования - нажмите на текст в блоке выше*"""
-        
-        await message.answer(transcript_message, parse_mode="Markdown")
+        # Send transcript as .txt file
+        await send_transcript_text(message, transcript_text.strip(), user_id)
         
         logger.info(f"Transcript sent to user {user_id}, type: {msg_type}")
         
@@ -684,8 +810,12 @@ async def handle_voice_message(message: Message):
             )
             
             if summary_result:
-                # Use SummaryEngine result
-                await processing_msg.edit_text(summary_result, parse_mode="Markdown")
+                # Use SummaryEngine result with inline buttons
+                await processing_msg.edit_text(
+                    summary_result, 
+                    parse_mode="Markdown",
+                    reply_markup=create_transcript_buttons()
+                )
             else:
                 # Fallback to original text processor
                 if text_processor:
@@ -712,7 +842,11 @@ async def handle_voice_message(message: Message):
 • `/анализ` - психологический анализ (намерения, эмоции, стиль)
 • `/layers` - глубокий анализ скрытых смыслов и мотивов"""
                         
-                        await processing_msg.edit_text(simplified_output, parse_mode="Markdown")
+                        await processing_msg.edit_text(
+                            simplified_output, 
+                            parse_mode="Markdown",
+                            reply_markup=create_transcript_buttons()
+                        )
                         
                     except Exception as text_error:
                         logger.error(f"Text processing error: {text_error}")
@@ -732,7 +866,11 @@ async def handle_voice_message(message: Message):
 • `/анализ` - психологический анализ (намерения, эмоции, стиль)
 • `/layers` - глубокий анализ скрытых смыслов и мотивов
 """
-                        await processing_msg.edit_text(fallback_text, parse_mode="Markdown")
+                        await processing_msg.edit_text(
+                            fallback_text, 
+                            parse_mode="Markdown",
+                            reply_markup=create_transcript_buttons()
+                        )
                 else:
                     # Text processor not initialized - fallback to transcription only
                     fallback_text = f"""
@@ -750,7 +888,11 @@ async def handle_voice_message(message: Message):
 • `/анализ` - психологический анализ (намерения, эмоции, стиль)
 • `/layers` - глубокий анализ скрытых смыслов и мотивов
 """
-                    await processing_msg.edit_text(fallback_text, parse_mode="Markdown")
+                    await processing_msg.edit_text(
+                        fallback_text, 
+                        parse_mode="Markdown",
+                        reply_markup=create_transcript_buttons()
+                    )
             
         except SpeechPipelineError as e:
             logger.error(f"Speech pipeline error: {e}")
@@ -821,8 +963,12 @@ async def handle_video_note(message: Message):
             )
             
             if summary_result:
-                # Use SummaryEngine result
-                await processing_msg.edit_text(summary_result, parse_mode="Markdown")
+                # Use SummaryEngine result with inline buttons
+                await processing_msg.edit_text(
+                    summary_result, 
+                    parse_mode="Markdown",
+                    reply_markup=create_transcript_buttons()
+                )
             else:
                 # Fallback to original text processor
                 if text_processor:
@@ -849,7 +995,11 @@ async def handle_video_note(message: Message):
 • `/анализ` - психологический анализ (намерения, эмоции, стиль)
 • `/layers` - глубокий анализ скрытых смыслов и мотивов"""
                         
-                        await processing_msg.edit_text(simplified_output, parse_mode="Markdown")
+                        await processing_msg.edit_text(
+                            simplified_output, 
+                            parse_mode="Markdown",
+                            reply_markup=create_transcript_buttons()
+                        )
                         
                     except Exception as text_error:
                         logger.error(f"Text processing error: {text_error}")
@@ -869,7 +1019,11 @@ async def handle_video_note(message: Message):
 • `/анализ` - психологический анализ (намерения, эмоции, стиль)
 • `/layers` - глубокий анализ скрытых смыслов и мотивов
 """
-                        await processing_msg.edit_text(fallback_text, parse_mode="Markdown")
+                        await processing_msg.edit_text(
+                            fallback_text, 
+                            parse_mode="Markdown",
+                            reply_markup=create_transcript_buttons()
+                        )
                 else:
                     # Text processor not initialized - fallback to transcription only
                     fallback_text = f"""
@@ -887,7 +1041,11 @@ async def handle_video_note(message: Message):
 • `/анализ` - психологический анализ (намерения, эмоции, стиль)
 • `/layers` - глубокий анализ скрытых смыслов и мотивов
 """
-                    await processing_msg.edit_text(fallback_text, parse_mode="Markdown")
+                    await processing_msg.edit_text(
+                        fallback_text, 
+                        parse_mode="Markdown",
+                        reply_markup=create_transcript_buttons()
+                    )
             
         except SpeechPipelineError as e:
             logger.error(f"Video note processing error: {e}")
@@ -1255,8 +1413,19 @@ from aiogram.types import CallbackQuery
 
 @dp.callback_query()
 async def handle_button_callback(callback_query: CallbackQuery):
-    """Handle button interactions - Redis-dependent features only"""
+    """Handle button interactions - transcript buttons and Redis-dependent features"""
     try:
+        data = callback_query.data
+        
+        # Handle transcript buttons
+        if data == "show_transcript":
+            await handle_show_transcript(callback_query)
+            return
+        elif data == "download_txt":
+            await handle_download_txt(callback_query)
+            return
+        
+        # Handle Redis-dependent features
         if button_ui_manager:
             # Use the full button UI manager if available
             result = await button_ui_manager.handle_callback(
@@ -1271,6 +1440,7 @@ async def handle_button_callback(callback_query: CallbackQuery):
             await callback_query.answer("""
 🤖 Используйте команды:
 • /transcript - получить транскрипт
+• /summary - получить саммари
 • /advice - получить совет
 • /анализ - психологический анализ
 • /layers - глубокий анализ
@@ -1279,6 +1449,61 @@ async def handle_button_callback(callback_query: CallbackQuery):
     except Exception as e:
         logger.error(f"Error handling button callback: {e}")
         await callback_query.answer("❌ Ошибка обработки", show_alert=True)
+
+
+async def handle_show_transcript(callback_query: CallbackQuery):
+    """Handle show transcript button"""
+    try:
+        user_id = str(callback_query.from_user.id)
+        
+        # Get last message data
+        last_msg_data = await get_last_message_data(user_id)
+        if not last_msg_data:
+            await callback_query.answer("❌ Нет данных для показа", show_alert=True)
+            return
+        
+        text = last_msg_data["text"]
+        
+        if len(text) <= 4096:
+            # Send as text message
+            transcript_text = f"""📝 **ТРАНСКРИПТ**
+
+{text}
+
+---
+💡 *Для копирования - выделите текст выше*"""
+            await callback_query.message.answer(transcript_text, parse_mode="Markdown")
+            await callback_query.answer("✅ Транскрипт отправлен")
+        else:
+            # Send as file
+            await send_transcript_text(callback_query.message, text, user_id)
+            await callback_query.answer("✅ Транскрипт отправлен как файл")
+            
+    except Exception as e:
+        logger.error(f"Error handling show transcript: {e}")
+        await callback_query.answer("❌ Ошибка при показе транскрипта", show_alert=True)
+
+
+async def handle_download_txt(callback_query: CallbackQuery):
+    """Handle download txt button"""
+    try:
+        user_id = str(callback_query.from_user.id)
+        
+        # Get last message data
+        last_msg_data = await get_last_message_data(user_id)
+        if not last_msg_data:
+            await callback_query.answer("❌ Нет данных для скачивания", show_alert=True)
+            return
+        
+        text = last_msg_data["text"]
+        
+        # Always send as file for download button
+        await send_transcript_text(callback_query.message, text, user_id)
+        await callback_query.answer("✅ Файл отправлен")
+        
+    except Exception as e:
+        logger.error(f"Error handling download txt: {e}")
+        await callback_query.answer("❌ Ошибка при скачивании файла", show_alert=True)
 
 
 @dp.error()
