@@ -154,6 +154,7 @@ async def cmd_help(message: Message):
 
 **🛠️ ОТЛАДКА:**
 • `/debug` - Отладочная информация
+• `/limits` - Лимиты файлов
 
 **📝 КАК ИСПОЛЬЗОВАТЬ:**
 1. Отправьте голосовое сообщение, видео или текст
@@ -1026,9 +1027,9 @@ async def handle_document(message: Message):
             )
             return
         
-        # Check file size (limit to 20MB)
-        if file_size and file_size > 20 * 1024 * 1024:
-            await message.reply("❌ Файл слишком большой. Максимальный размер: 20MB")
+        # Check file size (limit to 50MB - Telegram API limit)
+        if file_size and file_size > 50 * 1024 * 1024:
+            await message.reply("❌ Файл слишком большой. Максимальный размер: 50MB (лимит Telegram)")
             return
         
         # Check file type
@@ -1128,9 +1129,9 @@ async def handle_video(message: Message):
             )
             return
         
-        # Check file size (limit to 50MB)
+        # Check file size (limit to 50MB - Telegram API limit)
         if file_size and file_size > 50 * 1024 * 1024:
-            await message.reply("❌ Видео слишком большое. Максимальный размер: 50MB")
+            await message.reply("❌ Видео слишком большое. Максимальный размер: 50MB (лимит Telegram)")
             return
         
         # Send processing notification
@@ -1207,6 +1208,28 @@ async def cmd_list_modes(message: Message):
 Следите за обновлениями!
 """
     await message.answer(modes_text, parse_mode="Markdown")
+
+
+@dp.message(Command("limits"))
+async def cmd_limits(message: Message):
+    """Handle /limits command - show file size limits"""
+    limits_text = """
+📏 **Лимиты файлов**
+
+**Telegram API лимиты:**
+• 🎥 Видео файлы: **50MB**
+• 📄 Документы (PDF, DOC, TXT): **50MB**
+• 🎤 Голосовые сообщения: **50MB**
+• 📸 Фото: **10MB**
+
+**Рекомендации:**
+• Для больших файлов используйте сжатие
+• Видео можно конвертировать в более эффективные форматы
+• Документы можно разбить на части
+
+**Примечание:** Эти лимиты установлены Telegram API и не могут быть изменены.
+"""
+    await message.answer(limits_text, parse_mode="Markdown")
 
 
 @dp.message(Command("set_model"))

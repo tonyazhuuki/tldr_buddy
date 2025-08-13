@@ -177,8 +177,8 @@ class Config:
         if self.max_file_size <= 0:
             errors.append("max_file_size must be positive")
         
-        if self.max_file_size > 52428800:  # 50MB Telegram limit
-            errors.append("max_file_size cannot exceed 50MB (52428800 bytes)")
+        if self.max_file_size > 52428800:  # 50MB Telegram API limit
+            errors.append("max_file_size cannot exceed 50MB (52428800 bytes) - Telegram API limit")
         
         if self.default_ttl <= 0:
             errors.append("default_ttl must be positive")
