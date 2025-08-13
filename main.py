@@ -112,11 +112,11 @@ def create_transcript_buttons() -> InlineKeyboardMarkup:
     """Create inline keyboard with transcript buttons"""
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [
-            InlineKeyboardButton(text="📝 Показать транскрипт", callback_data="show_transcript"),
-            InlineKeyboardButton(text="📄 Скачать .txt", callback_data="download_txt")
+            InlineKeyboardButton(text="📝 Показать транскрипт", callback_data="transcript"),
+            InlineKeyboardButton(text="📄 Скачать .txt", callback_data="download")
         ]
     ])
-    logger.info("Created transcript buttons with callback_data: show_transcript, download_txt")
+    logger.info("Created transcript buttons with callback_data: transcript, download")
     return keyboard
 
 
@@ -1454,13 +1454,13 @@ async def handle_button_callback(callback_query: CallbackQuery):
         logger.info(f"Callback received: data='{data}', user_id={user_id}, chat_id={chat_id}")
         
         # Handle transcript buttons
-        if data == "show_transcript":
-            logger.info(f"Handling show_transcript for user {user_id} in chat {chat_id}")
-            await handle_show_transcript(callback_query)
+        if data == "transcript":
+            logger.info(f"Handling transcript button for user {user_id} in chat {chat_id}")
+            await handle_transcript_button(callback_query)
             return
-        elif data == "download_txt":
-            logger.info(f"Handling download_txt for user {user_id} in chat {chat_id}")
-            await handle_download_txt(callback_query)
+        elif data == "download":
+            logger.info(f"Handling download button for user {user_id} in chat {chat_id}")
+            await handle_download_button(callback_query)
             return
         
         # Handle Redis-dependent features
@@ -1489,58 +1489,47 @@ async def handle_button_callback(callback_query: CallbackQuery):
         await callback_query.answer("❌ Ошибка обработки", show_alert=True)
 
 
-async def handle_show_transcript(callback_query: CallbackQuery):
-    """Handle show transcript button"""
+async def handle_transcript_button(callback_query: CallbackQuery):
+    """Handle transcript button - same logic as /transcript command"""
     try:
         user_id = str(callback_query.from_user.id)
         chat_id = str(callback_query.message.chat.id)
         
-        logger.info(f"handle_show_transcript: user_id={user_id}, chat_id={chat_id}")
+        logger.info(f"handle_transcript_button: user_id={user_id}, chat_id={chat_id}")
         logger.info(f"Available chats: {list(chat_last_messages.keys())}")
         
         # Get last message data
         last_msg_data = await get_last_message_data(chat_id, user_id)
         if not last_msg_data:
             logger.warning(f"No message data found for chat {chat_id}, user {user_id}")
-            await callback_query.answer("❌ Нет данных для показа", show_alert=True)
+            await callback_query.answer("📄 Транскрипт недоступен", show_alert=True)
             return
         
-        text = last_msg_data["text"]
+        transcript_text = last_msg_data["text"]
         
-        if len(text) <= 4096:
-            # Send as text message
-            transcript_text = f"""📝 **ТРАНСКРИПТ**
-
-{text}
-
----
-💡 *Для копирования - выделите текст выше*"""
-            await callback_query.message.answer(transcript_text, parse_mode="Markdown")
-            await callback_query.answer("✅ Транскрипт отправлен")
-        else:
-            # Send as file
-            await send_transcript_text(callback_query.message, text, chat_id, user_id)
-            await callback_query.answer("✅ Транскрипт отправлен как файл")
+        # Send transcript using the same logic as /transcript command
+        await send_transcript_text(callback_query.message, transcript_text.strip(), chat_id, user_id)
+        await callback_query.answer("✅ Транскрипт отправлен")
             
     except Exception as e:
-        logger.error(f"Error handling show transcript: {e}")
-        await callback_query.answer("❌ Ошибка при показе транскрипта", show_alert=True)
+        logger.error(f"Error handling transcript button: {e}")
+        await callback_query.answer("❌ Ошибка при получении транскрипта", show_alert=True)
 
 
-async def handle_download_txt(callback_query: CallbackQuery):
-    """Handle download txt button"""
+async def handle_download_button(callback_query: CallbackQuery):
+    """Handle download button - always send as file"""
     try:
         user_id = str(callback_query.from_user.id)
         chat_id = str(callback_query.message.chat.id)
         
-        logger.info(f"handle_download_txt: user_id={user_id}, chat_id={chat_id}")
+        logger.info(f"handle_download_button: user_id={user_id}, chat_id={chat_id}")
         logger.info(f"Available chats: {list(chat_last_messages.keys())}")
         
         # Get last message data
         last_msg_data = await get_last_message_data(chat_id, user_id)
         if not last_msg_data:
             logger.warning(f"No message data found for chat {chat_id}, user {user_id}")
-            await callback_query.answer("❌ Нет данных для скачивания", show_alert=True)
+            await callback_query.answer("📄 Нет данных для скачивания", show_alert=True)
             return
         
         text = last_msg_data["text"]
@@ -1550,7 +1539,7 @@ async def handle_download_txt(callback_query: CallbackQuery):
         await callback_query.answer("✅ Файл отправлен")
         
     except Exception as e:
-        logger.error(f"Error handling download txt: {e}")
+        logger.error(f"Error handling download button: {e}")
         await callback_query.answer("❌ Ошибка при скачивании файла", show_alert=True)
 
 
