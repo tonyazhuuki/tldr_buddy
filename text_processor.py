@@ -301,6 +301,10 @@ class TextProcessor:
                     current_section = 'bullets'
                 elif line.startswith('⚡ ДЕЙСТВИЯ') or line.startswith('ДЕЙСТВИЯ:'):
                     current_section = 'actions'
+                elif line.startswith('нет явных действий'):
+                    # Special case for "no actions"
+                    actions = 'нет явных действий'
+                    current_section = 'actions'
                 elif line.startswith('❓ ОТКРЫТЫЕ ВОПРОСЫ'):
                     current_section = 'questions'
                 elif line.startswith('⚠️ РИСКИ'):
@@ -372,9 +376,12 @@ class TextProcessor:
             output_parts.append(f"**Основные пункты**:\n{bullets_text}")
         
         # Actions - support new format with multiple lines
-        if result.actions and result.actions.lower() != 'нет' and result.actions.strip():
+        if result.actions and result.actions.strip():
+            # Check for "no actions" case
+            if result.actions.strip() == 'нет явных действий':
+                output_parts.append(f"⚡ **Действия**: нет явных действий")
             # Check if actions contain multiple lines (new format)
-            if '\n' in result.actions:
+            elif '\n' in result.actions:
                 # New format with structured actions
                 output_parts.append(f"⚡ **Действия**:\n{result.actions}")
             else:
