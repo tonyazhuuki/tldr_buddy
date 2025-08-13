@@ -98,15 +98,7 @@ async def process_with_summary_engine(text: str, content_type: ContentType, dura
         )
         
         if result.success:
-            mode_label = "CHAT" if result.mode.value == "chat" else "LONGFORM"
-            return f"""📊 **TLDRBuddy Анализ** ({mode_label})
-
-{result.summary}
-
-⏱️ Обработано за {result.processing_time:.1f}с
-🎯 Режим: {mode_label}
-📊 Токены: {result.token_count}
-"""
+            return result.summary
         else:
             logger.warning(f"SummaryEngine failed: {result.error_message}")
             return None
