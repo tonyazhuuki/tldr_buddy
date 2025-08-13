@@ -116,11 +116,14 @@ def create_transcript_buttons() -> InlineKeyboardMarkup:
             InlineKeyboardButton(text="📄 Скачать .txt", callback_data="download_txt")
         ]
     ])
+    logger.info("Created transcript buttons with callback_data: show_transcript, download_txt")
     return keyboard
 
 
 async def send_transcript_text(message: Message, text: str, chat_id: str, user_id: str = None):
     """Send transcript as text or file based on length"""
+    logger.info(f"send_transcript_text: text_length={len(text)}, chat_id={chat_id}, user_id={user_id}")
+    
     if len(text) <= 4096:
         # Send as text message
         transcript_text = f"""📝 **ТРАНСКРИПТ**
@@ -168,6 +171,9 @@ async def get_last_message_data(chat_id: str, user_id: str = None, reply_to_mess
     Returns:
         Message data dict or None
     """
+    logger.info(f"get_last_message_data: chat_id={chat_id}, user_id={user_id}")
+    logger.info(f"Available chats: {list(chat_last_messages.keys())}")
+    
     if chat_id not in chat_last_messages:
         logger.info(f"Chat {chat_id} not found in chat_last_messages, total chats: {len(chat_last_messages)}")
         return None
@@ -816,7 +822,8 @@ async def handle_voice_message(message: Message):
                 "type": "voice",
                 "user_id": user_id
             }
-            logger.info(f"Stored voice message for chat {chat_id}, total chats: {len(chat_last_messages)}")
+            logger.info(f"Stored voice message for chat {chat_id}, user {user_id}, total chats: {len(chat_last_messages)}")
+            logger.info(f"Available chats after storing: {list(chat_last_messages.keys())}")
             
             # Update processing message
             await processing_msg.edit_text("🔄 Анализируем содержание...")
@@ -1441,12 +1448,18 @@ async def handle_button_callback(callback_query: CallbackQuery):
     """Handle button interactions - transcript buttons and Redis-dependent features"""
     try:
         data = callback_query.data
+        user_id = str(callback_query.from_user.id)
+        chat_id = str(callback_query.message.chat.id)
+        
+        logger.info(f"Callback received: data='{data}', user_id={user_id}, chat_id={chat_id}")
         
         # Handle transcript buttons
         if data == "show_transcript":
+            logger.info(f"Handling show_transcript for user {user_id} in chat {chat_id}")
             await handle_show_transcript(callback_query)
             return
         elif data == "download_txt":
+            logger.info(f"Handling download_txt for user {user_id} in chat {chat_id}")
             await handle_download_txt(callback_query)
             return
         
@@ -1482,9 +1495,13 @@ async def handle_show_transcript(callback_query: CallbackQuery):
         user_id = str(callback_query.from_user.id)
         chat_id = str(callback_query.message.chat.id)
         
+        logger.info(f"handle_show_transcript: user_id={user_id}, chat_id={chat_id}")
+        logger.info(f"Available chats: {list(chat_last_messages.keys())}")
+        
         # Get last message data
         last_msg_data = await get_last_message_data(chat_id, user_id)
         if not last_msg_data:
+            logger.warning(f"No message data found for chat {chat_id}, user {user_id}")
             await callback_query.answer("❌ Нет данных для показа", show_alert=True)
             return
         
@@ -1516,9 +1533,13 @@ async def handle_download_txt(callback_query: CallbackQuery):
         user_id = str(callback_query.from_user.id)
         chat_id = str(callback_query.message.chat.id)
         
+        logger.info(f"handle_download_txt: user_id={user_id}, chat_id={chat_id}")
+        logger.info(f"Available chats: {list(chat_last_messages.keys())}")
+        
         # Get last message data
         last_msg_data = await get_last_message_data(chat_id, user_id)
         if not last_msg_data:
+            logger.warning(f"No message data found for chat {chat_id}, user {user_id}")
             await callback_query.answer("❌ Нет данных для скачивания", show_alert=True)
             return
         
