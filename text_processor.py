@@ -44,6 +44,8 @@ class ProcessingResult:
     summary: Optional[str] = None
     bullets: Optional[List[str]] = None
     actions: Optional[str] = None
+    questions: Optional[List[str]] = None
+    risks: Optional[List[str]] = None
     tone_analysis: Optional[Dict[str, str]] = None
     emotion_scores: Optional[Dict[str, float]] = None
     emotion_levels: Optional[Dict[str, str]] = None
@@ -196,7 +198,7 @@ class TextProcessor:
             tone_text = tone_result if isinstance(tone_result, str) else None
             
             # Parse DEFAULT mode result
-            summary, bullets, actions = self._parse_default_result(default_text)
+            summary, bullets, actions, questions, risks = self._parse_default_result(default_text)
             
             # Parse TONE mode result
             tone_analysis = self._parse_tone_result(tone_text)
@@ -226,6 +228,8 @@ class TextProcessor:
                 summary=summary,
                 bullets=bullets,
                 actions=actions,
+                questions=questions,
+                risks=risks,
                 tone_analysis=tone_analysis,
                 emotion_scores=emotion_scores,
                 emotion_levels=emotion_levels,
@@ -269,16 +273,18 @@ class TextProcessor:
             logger.error(f"Error processing mode {mode.name}: {e}")
             return None
     
-    def _parse_default_result(self, result: Optional[str]) -> Tuple[Optional[str], Optional[List[str]], Optional[str]]:
-        """Parse DEFAULT mode result into summary, bullets, and actions"""
+    def _parse_default_result(self, result: Optional[str]) -> Tuple[Optional[str], Optional[List[str]], Optional[str], Optional[List[str]], Optional[List[str]]]:
+        """Parse DEFAULT mode result into summary, bullets, actions, questions, and risks"""
         if not result:
-            return None, None, None
+            return None, None, None, None, None
             
         try:
             lines = result.split('\n')
             summary = None
             bullets = []
             actions = None
+            questions = []
+            risks = []
             
             current_section = None
             
@@ -287,22 +293,36 @@ class TextProcessor:
                 if not line:
                     continue
                     
-                if line.startswith('РЕЗЮМЕ:'):
-                    summary = line.replace('РЕЗЮМЕ:', '').strip()
+                # Support both old and new formats
+                if line.startswith('📝 РЕЗЮМЕ:') or line.startswith('РЕЗЮМЕ:'):
+                    summary = line.replace('📝 РЕЗЮМЕ:', '').replace('РЕЗЮМЕ:', '').strip()
                     current_section = 'summary'
-                elif line.startswith('ОСНОВНЫЕ ПУНКТЫ:'):
+                elif line.startswith('ОСНОВНЫЕ ПУНКТЫ') or line.startswith('ОСНОВНЫЕ ПУНКТЫ:'):
                     current_section = 'bullets'
-                elif line.startswith('ДЕЙСТВИЯ:'):
-                    actions = line.replace('ДЕЙСТВИЯ:', '').strip()
+                elif line.startswith('⚡ ДЕЙСТВИЯ') or line.startswith('ДЕЙСТВИЯ:'):
                     current_section = 'actions'
+                elif line.startswith('❓ ОТКРЫТЫЕ ВОПРОСЫ'):
+                    current_section = 'questions'
+                elif line.startswith('⚠️ РИСКИ'):
+                    current_section = 'risks'
                 elif line.startswith('•') and current_section == 'bullets':
                     bullets.append(line.replace('•', '').strip())
+                elif line.startswith('•') and current_section == 'actions':
+                    # Collect action items
+                    if actions is None:
+                        actions = line.replace('•', '').strip()
+                    else:
+                        actions += '\n' + line.replace('•', '').strip()
+                elif line.startswith('•') and current_section == 'questions':
+                    questions.append(line.replace('•', '').strip())
+                elif line.startswith('•') and current_section == 'risks':
+                    risks.append(line.replace('•', '').strip())
             
-            return summary, bullets if bullets else None, actions
+            return summary, bullets if bullets else None, actions, questions if questions else None, risks if risks else None
             
         except Exception as e:
             logger.error(f"Error parsing DEFAULT result: {e}")
-            return None, None, None
+            return None, None, None, None, None
     
     def _parse_tone_result(self, result: Optional[str]) -> Optional[Dict[str, str]]:
         """Parse TONE mode result into structured analysis"""
@@ -351,9 +371,25 @@ class TextProcessor:
             bullets_text = "\n".join([f"• {bullet}" for bullet in result.bullets])
             output_parts.append(f"**Основные пункты**:\n{bullets_text}")
         
-        # Actions
+        # Actions - support new format with multiple lines
         if result.actions and result.actions.lower() != 'нет' and result.actions.strip():
-            output_parts.append(f"👉 **Действия**: {result.actions}")
+            # Check if actions contain multiple lines (new format)
+            if '\n' in result.actions:
+                # New format with structured actions
+                output_parts.append(f"⚡ **Действия**:\n{result.actions}")
+            else:
+                # Old format - single line
+                output_parts.append(f"👉 **Действия**: {result.actions}")
+        
+        # Questions
+        if result.questions:
+            questions_text = "\n".join([f"• {q}" for q in result.questions])
+            output_parts.append(f"❓ **Открытые вопросы**:\n{questions_text}")
+        
+        # Risks
+        if result.risks:
+            risks_text = "\n".join([f"• {risk}" for risk in result.risks])
+            output_parts.append(f"⚠️ **Риски/ограничения**:\n{risks_text}")
         
         # Emotion analysis indicators - REMOVED from main output (available via /layers command)
         # if result.emotion_levels:
