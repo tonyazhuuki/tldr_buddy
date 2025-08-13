@@ -71,8 +71,8 @@ archetype_system = None
 button_ui_manager = None
 summary_engine = None
 
-# Simple in-memory storage for last messages (no Redis needed)
-user_last_messages = {}  # {user_id: {"text": str, "timestamp": float, "type": "voice|text"}}
+# Simple in-memory storage for last messages by chat (no Redis needed)
+chat_last_messages = {}  # {chat_id: {"text": str, "timestamp": float, "type": "voice|text", "user_id": str}}
 
 # Helper function for SummaryEngine integration
 async def process_with_summary_engine(text: str, content_type: ContentType, duration: Optional[int] = None) -> Optional[str]:
@@ -119,7 +119,7 @@ def create_transcript_buttons() -> InlineKeyboardMarkup:
     return keyboard
 
 
-async def send_transcript_text(message: Message, text: str, user_id: str):
+async def send_transcript_text(message: Message, text: str, chat_id: str, user_id: str = None):
     """Send transcript as text or file based on length"""
     if len(text) <= 4096:
         # Send as text message
@@ -156,18 +156,36 @@ async def send_transcript_text(message: Message, text: str, user_id: str):
         )
 
 
-async def get_last_message_data(user_id: str) -> dict:
-    """Get last message data for user"""
-    if user_id not in user_last_messages:
+async def get_last_message_data(chat_id: str, user_id: str = None, reply_to_message_id: int = None) -> dict:
+    """
+    Get last message data for chat, with support for reply-to-message
+    
+    Args:
+        chat_id: Chat ID
+        user_id: User ID (optional, for filtering)
+        reply_to_message_id: Message ID to reply to (optional)
+    
+    Returns:
+        Message data dict or None
+    """
+    if chat_id not in chat_last_messages:
+        logger.info(f"Chat {chat_id} not found in chat_last_messages, total chats: {len(chat_last_messages)}")
         return None
     
-    last_msg_data = user_last_messages[user_id]
+    last_msg_data = chat_last_messages[chat_id]
     
     # Check if message is not too old (1 hour limit)
     import time
     if time.time() - last_msg_data["timestamp"] > 3600:
+        logger.info(f"Message for chat {chat_id} is too old ({(time.time() - last_msg_data['timestamp'])/60:.1f} minutes)")
         return None
     
+    # If user_id is specified, check if it matches
+    if user_id and last_msg_data.get("user_id") != user_id:
+        logger.info(f"Message in chat {chat_id} belongs to user {last_msg_data.get('user_id')}, not {user_id}")
+        return None
+    
+    logger.info(f"Found message for chat {chat_id}, type: {last_msg_data['type']}, age: {(time.time() - last_msg_data['timestamp'])/60:.1f} minutes")
     return last_msg_data
 
 
@@ -305,11 +323,16 @@ async def cmd_summary(message: Message):
             return
             
         user_id = str(message.from_user.id)
+        chat_id = str(message.chat.id)
         
         # Get last message data
-        last_msg_data = await get_last_message_data(user_id)
+        last_msg_data = await get_last_message_data(chat_id, user_id)
         if not last_msg_data:
-            await message.answer("""
+            # Add debug information
+            total_chats = len(chat_last_messages)
+            chat_ids = list(chat_last_messages.keys())
+            
+            debug_info = f"""
 📄 **Саммари недоступно**
 
 Сначала отправьте голосовое сообщение, видео или текст для анализа, 
@@ -319,7 +342,14 @@ async def cmd_summary(message: Message):
 1. Отправьте голосовое сообщение, видео или текст
 2. Подождите обработки  
 3. Введите `/summary` для получения саммари
-""", parse_mode="Markdown")
+
+🔍 **Отладочная информация:**
+• Ваш ID: {user_id}
+• ID чата: {chat_id}
+• Всего чатов в памяти: {total_chats}
+• ID чатов: {chat_ids[:5] if chat_ids else 'нет'}
+"""
+            await message.answer(debug_info, parse_mode="Markdown")
             return
         
         # Get the text and try to process with SummaryEngine
@@ -390,10 +420,16 @@ async def cmd_transcript(message: Message):
             return
             
         user_id = str(message.from_user.id)
+        chat_id = str(message.chat.id)
         
-        # Check if user has any recent messages
-        if user_id not in user_last_messages:
-            await message.answer("""
+        # Get last message data
+        last_msg_data = await get_last_message_data(chat_id, user_id)
+        if not last_msg_data:
+            # Add debug information
+            total_chats = len(chat_last_messages)
+            chat_ids = list(chat_last_messages.keys())
+            
+            debug_info = f"""
 📄 **Транскрипт недоступен**
 
 Сначала отправьте голосовое сообщение или текст для анализа, 
@@ -403,28 +439,22 @@ async def cmd_transcript(message: Message):
 1. Отправьте голосовое сообщение или текст
 2. Подождите обработки  
 3. Введите `/transcript` для скачивания
-""", parse_mode="Markdown")
+
+🔍 **Отладочная информация:**
+• Ваш ID: {user_id}
+• ID чата: {chat_id}
+• Всего чатов в памяти: {total_chats}
+• ID чатов: {chat_ids[:5] if chat_ids else 'нет'}
+"""
+            await message.answer(debug_info, parse_mode="Markdown")
             return
         
-        # Get last message data
-        last_msg_data = user_last_messages[user_id]
+        # Get message data
         transcript_text = last_msg_data["text"]
         msg_type = last_msg_data["type"]
-        timestamp_stored = last_msg_data["timestamp"]
-        
-        # Check if message is not too old (1 hour limit)
-        import time
-        if time.time() - timestamp_stored > 3600:
-            await message.answer("""
-📄 **Транскрипт устарел**
-
-Последнее сообщение было обработано более часа назад.
-Отправьте новое голосовое сообщение или текст для создания свежего транскрипта.
-""", parse_mode="Markdown")
-            return
         
         # Send transcript as .txt file
-        await send_transcript_text(message, transcript_text.strip(), user_id)
+        await send_transcript_text(message, transcript_text.strip(), chat_id, user_id)
         
         logger.info(f"Transcript sent to user {user_id}, type: {msg_type}")
         
@@ -439,7 +469,8 @@ async def cmd_transcript(message: Message):
 🔍 **Детали для отладки**:
 • Ошибка: {str(e)}
 • Пользователь: {user_id if 'user_id' in locals() else 'неизвестен'}
-• Есть сообщения: {user_id in user_last_messages if 'user_id' in locals() else 'неизвестно'}
+• Чат: {chat_id if 'chat_id' in locals() else 'неизвестен'}
+• Есть сообщения: {chat_id in chat_last_messages if 'chat_id' in locals() else 'неизвестно'}
 
 💡 Попробуйте:
 1. Отправить новое голосовое сообщение
@@ -458,23 +489,17 @@ async def cmd_analysis(message: Message):
             return
             
         user_id = str(message.from_user.id)
+        chat_id = str(message.chat.id)
         
-        # Check if user has recent message
-        if user_id not in user_last_messages:
+        # Get last message data
+        last_msg_data = await get_last_message_data(chat_id, user_id)
+        if not last_msg_data:
             await message.answer("❌ Нет данных для анализа\n\nОтправьте голосовое сообщение или текст, а затем используйте `/анализ`")
             return
         
-        # Get stored message data
-        last_msg_data = user_last_messages[user_id]
         message_text = last_msg_data["text"]
         timestamp_stored = last_msg_data["timestamp"]
         msg_type = last_msg_data["type"]
-        
-        # Check if message is too old (1 hour)
-        import time
-        if time.time() - timestamp_stored > 3600:
-            await message.answer("🤖 **Контекст устарел**\n\nПоследнее сообщение было обработано более часа назад.\nОтправьте новое сообщение для получения актуального анализа.")
-            return
         
         # Process with text processor for psychological analysis
         if text_processor:
@@ -525,9 +550,11 @@ async def cmd_layers(message: Message):
             return
             
         user_id = str(message.from_user.id)
+        chat_id = str(message.chat.id)
         
-        # Check if user has any recent messages
-        if user_id not in user_last_messages:
+        # Get last message data
+        last_msg_data = await get_last_message_data(chat_id, user_id)
+        if not last_msg_data:
             await message.answer("""
 🔍 **Анализ слоев недоступен**
 
@@ -541,22 +568,9 @@ async def cmd_layers(message: Message):
 """, parse_mode="Markdown")
             return
         
-        # Get last message data
-        last_msg_data = user_last_messages[user_id]
         message_text = last_msg_data["text"]
         msg_type = last_msg_data["type"]
         timestamp_stored = last_msg_data["timestamp"]
-        
-        # Check if message is not too old (1 hour limit)
-        import time
-        if time.time() - timestamp_stored > 3600:
-            await message.answer("""
-🔍 **Контекст устарел**
-
-Последнее сообщение было обработано более часа назад.
-Отправьте новое сообщение для актуального анализа слоев.
-""", parse_mode="Markdown")
-            return
         
         # Perform deep analysis using text processor
         if text_processor:
@@ -620,19 +634,22 @@ async def cmd_debug(message: Message):
             return
             
         user_id = str(message.from_user.id)
+        chat_id = str(message.chat.id)
         
         # Check global state
-        total_users = len(user_last_messages)
+        total_chats = len(chat_last_messages)
         
         debug_info = f"""🔍 **ОТЛАДОЧНАЯ ИНФОРМАЦИЯ**
 
 👤 **Ваш ID**: {user_id}
-📊 **Всего пользователей в памяти**: {total_users}
+💬 **ID чата**: {chat_id}
+📊 **Всего чатов в памяти**: {total_chats}
+🆔 **ID чатов**: {list(chat_last_messages.keys())[:5] if chat_last_messages else 'нет'}
 
 """
         
-        if user_id in user_last_messages:
-            last_msg_data = user_last_messages[user_id]
+        if chat_id in chat_last_messages:
+            last_msg_data = chat_last_messages[chat_id]
             import time
             age_seconds = int(time.time() - last_msg_data["timestamp"])
             age_minutes = age_seconds // 60
@@ -656,7 +673,7 @@ async def cmd_debug(message: Message):
         
         await message.answer(debug_info, parse_mode="Markdown")
         
-        logger.info(f"Debug info sent to user {user_id}, has_message: {user_id in user_last_messages}")
+        logger.info(f"Debug info sent to user {user_id}, has_message: {chat_id in chat_last_messages}")
         
     except Exception as e:
         logger.error(f"Debug command failed: {e}")
@@ -672,9 +689,10 @@ async def cmd_advice(message: Message):
             return
             
         user_id = str(message.from_user.id)
+        chat_id = str(message.chat.id)
         
         # Check if user has any recent messages
-        if user_id not in user_last_messages:
+        if chat_id not in chat_last_messages:
             await message.answer("""
 🤖 **Совет недоступен**
 
@@ -689,21 +707,19 @@ async def cmd_advice(message: Message):
             return
         
         # Get last message data
-        last_msg_data = user_last_messages[user_id]
+        last_msg_data = await get_last_message_data(chat_id, user_id)
+        if not last_msg_data:
+            await message.answer("""
+🤖 **Совет недоступен**
+
+Сначала отправьте голосовое сообщение или текст для анализа, 
+затем используйте `/advice` для получения совета.
+""", parse_mode="Markdown")
+            return
+        
         message_text = last_msg_data["text"]
         msg_type = last_msg_data["type"]
         timestamp_stored = last_msg_data["timestamp"]
-        
-        # Check if message is not too old (1 hour limit)
-        import time
-        if time.time() - timestamp_stored > 3600:
-            await message.answer("""
-🤖 **Контекст устарел**
-
-Последнее сообщение было обработано более часа назад.
-Отправьте новое сообщение для получения актуального совета.
-""", parse_mode="Markdown")
-            return
         
         # Generate advice based on user ID (4 different archetypes)
         advice_responses = [
@@ -793,11 +809,14 @@ async def handle_voice_message(message: Message):
             
             # Store the transcribed text for commands
             import time
-            user_last_messages[user_id] = {
+            chat_id = str(message.chat.id)
+            chat_last_messages[chat_id] = {
                 "text": transcribed_text,
                 "timestamp": time.time(),
-                "type": "voice"
+                "type": "voice",
+                "user_id": user_id
             }
+            logger.info(f"Stored voice message for chat {chat_id}, total chats: {len(chat_last_messages)}")
             
             # Update processing message
             await processing_msg.edit_text("🔄 Анализируем содержание...")
@@ -946,11 +965,14 @@ async def handle_video_note(message: Message):
             
             # Store the transcribed text for commands
             import time
-            user_last_messages[user_id] = {
+            chat_id = str(message.chat.id)
+            chat_last_messages[chat_id] = {
                 "text": transcribed_text,
                 "timestamp": time.time(),
-                "type": "video"
+                "type": "video",
+                "user_id": user_id
             }
+            logger.info(f"Stored video message for chat {chat_id}, total chats: {len(chat_last_messages)}")
             
             # Update processing message
             await processing_msg.edit_text("🔄 Анализируем содержание...")
@@ -1091,11 +1113,14 @@ async def handle_text_message(message: Message):
         
         # Store the text for commands
         import time
-        user_last_messages[user_id] = {
+        chat_id = str(message.chat.id)
+        chat_last_messages[chat_id] = {
             "text": text_content,
             "timestamp": time.time(),
-            "type": "text"
+            "type": "text",
+            "user_id": user_id
         }
+        logger.info(f"Stored text message for chat {chat_id}, total chats: {len(chat_last_messages)}")
         
         # Send processing notification
         processing_msg = await message.answer("📝 Анализируем текст...")
@@ -1455,9 +1480,10 @@ async def handle_show_transcript(callback_query: CallbackQuery):
     """Handle show transcript button"""
     try:
         user_id = str(callback_query.from_user.id)
+        chat_id = str(callback_query.message.chat.id)
         
         # Get last message data
-        last_msg_data = await get_last_message_data(user_id)
+        last_msg_data = await get_last_message_data(chat_id, user_id)
         if not last_msg_data:
             await callback_query.answer("❌ Нет данных для показа", show_alert=True)
             return
@@ -1476,7 +1502,7 @@ async def handle_show_transcript(callback_query: CallbackQuery):
             await callback_query.answer("✅ Транскрипт отправлен")
         else:
             # Send as file
-            await send_transcript_text(callback_query.message, text, user_id)
+            await send_transcript_text(callback_query.message, text, chat_id, user_id)
             await callback_query.answer("✅ Транскрипт отправлен как файл")
             
     except Exception as e:
@@ -1488,9 +1514,10 @@ async def handle_download_txt(callback_query: CallbackQuery):
     """Handle download txt button"""
     try:
         user_id = str(callback_query.from_user.id)
+        chat_id = str(callback_query.message.chat.id)
         
         # Get last message data
-        last_msg_data = await get_last_message_data(user_id)
+        last_msg_data = await get_last_message_data(chat_id, user_id)
         if not last_msg_data:
             await callback_query.answer("❌ Нет данных для скачивания", show_alert=True)
             return
@@ -1498,7 +1525,7 @@ async def handle_download_txt(callback_query: CallbackQuery):
         text = last_msg_data["text"]
         
         # Always send as file for download button
-        await send_transcript_text(callback_query.message, text, user_id)
+        await send_transcript_text(callback_query.message, text, chat_id, user_id)
         await callback_query.answer("✅ Файл отправлен")
         
     except Exception as e:
