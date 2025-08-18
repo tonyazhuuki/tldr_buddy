@@ -36,4 +36,8 @@ filelock==3.13.1
 jsonschema==4.19.2
 
 # Timezone Support
-pytz==2024.1 
+pytz==2024.1
+
+# YouTube Support
+youtube-transcript-api==0.6.2
+yt-dlp==2024.12.17 
