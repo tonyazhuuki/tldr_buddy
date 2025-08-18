@@ -333,6 +333,31 @@ async def cmd_help(message: Message):
     await message.answer(help_text, parse_mode="Markdown")
 
 
+@dp.message(Command("version"))
+async def cmd_version(message: Message):
+    """Handle /version command - show bot version"""
+    version_text = """
+🤖 **TLDR Buddy Bot - Версия**
+
+**Версия:** 2025-01-16 v3.3
+**Изменения:**
+• ✅ Убраны кнопки, добавлены команды
+• ✅ Добавлена поддержка YouTube TLDR
+• ✅ Улучшена производительность
+• ✅ Исправлены ошибки обработки
+
+**Статус развертывания:**
+• Код: ✅ Обновлен
+• Git: ✅ Отправлен
+• Railway: ⏳ Развертывается
+• Telegram: ⏳ Кэширование
+
+**Проверка:**
+Отправьте новое сообщение боту, чтобы увидеть изменения
+"""
+    await message.answer(version_text, parse_mode="Markdown")
+
+
 @dp.message(Command("health"))
 async def cmd_health(message: Message):
     """Handle /health command"""
