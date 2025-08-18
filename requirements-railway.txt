@@ -39,4 +39,5 @@ jsonschema==4.19.2
 pytz==2024.1
 
 # YouTube Support
-yt-dlp==2024.12.17 
+yt-dlp==2024.12.17
+youtube-transcript-api==1.2.2 

@@ -35,8 +35,8 @@ from archetype_system import ArchetypeSystem, create_archetype_system
 # Import SummaryEngine for two-mode summarization
 from summary_engine import SummaryEngine, ContentType, create_summary_engine
 
-# Import YouTube downloader
-from youtube_downloader import create_youtube_downloader
+# Import YouTube hybrid processor
+from youtube_hybrid import create_youtube_hybrid_processor
 
 # Import process management for single-instance enforcement
 from process_manager import enforce_single_instance
@@ -74,7 +74,7 @@ redis_client = None
 archetype_system = None
 button_ui_manager = None
 summary_engine = None
-youtube_downloader = None
+youtube_processor = None
 
 # Simple in-memory storage for last messages by chat (no Redis needed)
 chat_last_messages = {}  # {chat_id: {"text": str, "timestamp": float, "type": "voice|text", "user_id": str}}
@@ -151,108 +151,170 @@ def is_youtube_url(text: str) -> bool:
 
 
 async def handle_youtube_url(message: Message, youtube_url: str, user_id: str):
-    """Handle YouTube URL - download and process with existing speech pipeline"""
+    """Handle YouTube URL - hybrid processing with transcript API and yt-dlp"""
     try:
         chat_id = str(message.chat.id)
         
         # Send processing notification
-        processing_msg = await message.answer("🎥 Загружаем YouTube видео...")
+        processing_msg = await message.answer("🎥 Обрабатываем YouTube видео...")
         
-        # Download YouTube video
-        if youtube_downloader and youtube_downloader.available:
-            download_result = youtube_downloader.download_video(youtube_url, max_duration=600)  # 10 minutes max
+        # Process YouTube video with hybrid approach
+        if youtube_processor and (youtube_processor.transcript_api_available or youtube_processor.yt_dlp_available):
+            result = youtube_processor.process_youtube_video(youtube_url, prefer_transcript=True)
             
-            if download_result:
-                file_path, video_info = download_result
-                
-                try:
-                    # Update processing message
-                    await processing_msg.edit_text("🎥 Обрабатываем видео через Whisper...")
+            if result["success"]:
+                if result["method"] == "transcript_api":
+                    # Got transcript directly via API
+                    transcribed_text = result["text"]
+                    duration = result["duration"]
+                    language = result["language"]
                     
-                    # Process with existing speech pipeline
-                    if speech_pipeline:
-                        # Use existing speech pipeline for transcription
-                        result = await speech_pipeline.process_audio_file(file_path)
+                    # Store for commands
+                    import time
+                    chat_last_messages[chat_id] = {
+                        "text": transcribed_text,
+                        "timestamp": time.time(),
+                        "type": "youtube",
+                        "user_id": user_id,
+                        "video_id": result["video_id"],
+                        "duration": duration,
+                        "language": language,
+                        "method": "transcript_api"
+                    }
+                    logger.info(f"Stored YouTube transcript via API for chat {chat_id}, user {user_id}, duration: {duration}s")
+                    
+                    # Process with SummaryEngine
+                    if summary_engine and summary_engine.enabled:
+                        content_type = ContentType.LONGFORM if duration > 300 else ContentType.CHAT
+                        summary_result = await summary_engine.process_summary(
+                            text=transcribed_text,
+                            content_type=content_type,
+                            duration=duration
+                        )
                         
-                        if result.success:
-                            transcribed_text = result.transcript
-                            duration = video_info['duration']
+                        if summary_result.success:
+                            youtube_summary = f"""🎥 **YouTube TLDR (API)**
+
+**Видео ID:** {result["video_id"]}
+**Длительность:** {duration//60}:{duration%60:02d} минут
+**Язык:** {language}
+**Метод:** Transcript API
+**Транскрипт:** {len(transcribed_text)} символов
+
+{summary_result.summary}"""
                             
-                            # Store for commands
-                            import time
-                            chat_last_messages[chat_id] = {
-                                "text": transcribed_text,
-                                "timestamp": time.time(),
-                                "type": "youtube",
-                                "user_id": user_id,
-                                "video_id": youtube_downloader.extract_video_id(youtube_url),
-                                "duration": duration,
-                                "title": video_info['title'],
-                                "uploader": video_info['uploader']
-                            }
-                            logger.info(f"Stored YouTube video transcript for chat {chat_id}, user {user_id}, duration: {duration}s")
+                            await processing_msg.edit_text(
+                                youtube_summary + create_command_footer(),
+                                parse_mode="Markdown"
+                            )
+                        else:
+                            # Fallback to basic summary
+                            await processing_msg.edit_text(
+                                f"🎥 **YouTube видео обработано (API)**\n\n**ID:** {result['video_id']}\n\nТранскрипт получен через API. Используйте команды для анализа." + create_command_footer(),
+                                parse_mode="Markdown"
+                            )
+                    else:
+                        # No SummaryEngine - basic response
+                        await processing_msg.edit_text(
+                            f"🎥 **YouTube видео обработано (API)**\n\n**ID:** {result['video_id']}\n\nТранскрипт получен через API. Используйте команды для анализа." + create_command_footer(),
+                            parse_mode="Markdown"
+                        )
+                
+                elif result["method"] == "yt_dlp":
+                    # Downloaded video, need Whisper processing
+                    file_path = result["file_path"]
+                    video_info = result["video_info"]
+                    
+                    try:
+                        # Update processing message
+                        await processing_msg.edit_text("🎥 Обрабатываем видео через Whisper...")
+                        
+                        # Process with existing speech pipeline
+                        if speech_pipeline:
+                            speech_result = await speech_pipeline.process_audio_file(file_path)
                             
-                            # Process with SummaryEngine (LONGFORM for long videos)
-                            if summary_engine and summary_engine.enabled:
-                                content_type = ContentType.LONGFORM if duration > 300 else ContentType.CHAT
-                                summary_result = await summary_engine.process_summary(
-                                    text=transcribed_text,
-                                    content_type=content_type,
-                                    duration=duration
-                                )
+                            if speech_result.success:
+                                transcribed_text = speech_result.transcript
+                                duration = video_info['duration']
                                 
-                                if summary_result.success:
-                                    youtube_summary = f"""🎥 **YouTube TLDR**
+                                # Store for commands
+                                import time
+                                chat_last_messages[chat_id] = {
+                                    "text": transcribed_text,
+                                    "timestamp": time.time(),
+                                    "type": "youtube",
+                                    "user_id": user_id,
+                                    "video_id": result["video_id"],
+                                    "duration": duration,
+                                    "title": video_info['title'],
+                                    "uploader": video_info['uploader'],
+                                    "method": "yt_dlp"
+                                }
+                                logger.info(f"Stored YouTube video transcript via yt-dlp for chat {chat_id}, user {user_id}, duration: {duration}s")
+                                
+                                # Process with SummaryEngine
+                                if summary_engine and summary_engine.enabled:
+                                    content_type = ContentType.LONGFORM if duration > 300 else ContentType.CHAT
+                                    summary_result = await summary_engine.process_summary(
+                                        text=transcribed_text,
+                                        content_type=content_type,
+                                        duration=duration
+                                    )
+                                    
+                                    if summary_result.success:
+                                        youtube_summary = f"""🎥 **YouTube TLDR (Whisper)**
 
 **Видео:** {video_info['title']}
 **Автор:** {video_info['uploader']}
 **Длительность:** {duration//60}:{duration%60:02d} минут
+**Метод:** yt-dlp + Whisper
 **Транскрипт:** {len(transcribed_text)} символов
 
 {summary_result.summary}"""
-                                    
-                                    await processing_msg.edit_text(
-                                        youtube_summary + create_command_footer(),
-                                        parse_mode="Markdown"
-                                    )
+                                        
+                                        await processing_msg.edit_text(
+                                            youtube_summary + create_command_footer(),
+                                            parse_mode="Markdown"
+                                        )
+                                    else:
+                                        # Fallback to basic summary
+                                        await processing_msg.edit_text(
+                                            f"🎥 **YouTube видео обработано (Whisper)**\n\n**{video_info['title']}**\n\nТранскрипт получен через Whisper. Используйте команды для анализа." + create_command_footer(),
+                                            parse_mode="Markdown"
+                                        )
                                 else:
-                                    # Fallback to basic summary
+                                    # No SummaryEngine - basic response
                                     await processing_msg.edit_text(
-                                        f"🎥 **YouTube видео обработано**\n\n**{video_info['title']}**\n\nТранскрипт получен. Используйте команды для анализа." + create_command_footer(),
+                                        f"🎥 **YouTube видео обработано (Whisper)**\n\n**{video_info['title']}**\n\nТранскрипт получен через Whisper. Используйте команды для анализа." + create_command_footer(),
                                         parse_mode="Markdown"
                                     )
                             else:
-                                # No SummaryEngine - basic response
+                                # Speech pipeline failed
                                 await processing_msg.edit_text(
-                                    f"🎥 **YouTube видео обработано**\n\n**{video_info['title']}**\n\nТранскрипт получен. Используйте команды для анализа." + create_command_footer(),
+                                    f"❌ Ошибка обработки видео: {speech_result.error_message}",
                                     parse_mode="Markdown"
                                 )
                         else:
-                            # Speech pipeline failed
+                            # Speech pipeline not available
                             await processing_msg.edit_text(
-                                f"❌ Ошибка обработки видео: {result.error_message}",
+                                "❌ Система обработки речи недоступна",
                                 parse_mode="Markdown"
                             )
-                    else:
-                        # Speech pipeline not available
-                        await processing_msg.edit_text(
-                            "❌ Система обработки речи недоступна",
-                            parse_mode="Markdown"
-                        )
-                        
-                finally:
-                    # Clean up downloaded file
-                    youtube_downloader.cleanup_file(file_path)
+                            
+                    finally:
+                        # Clean up downloaded file
+                        youtube_processor.cleanup_file(file_path)
             else:
-                # Download failed
+                # Both methods failed
+                error_msg = result.get("error", "Unknown error")
                 await processing_msg.edit_text(
-                    f"❌ Не удалось загрузить видео\n\nВозможные причины:\n• Видео длиннее 10 минут\n• Видео недоступно\n• Ошибка сети",
+                    f"❌ Не удалось обработать видео\n\nОшибка: {error_msg}\n\nВозможные причины:\n• Видео недоступно\n• Нет субтитров\n• Видео слишком длинное",
                     parse_mode="Markdown"
                 )
         else:
-            # YouTube downloader not available
+            # YouTube processor not available
             await processing_msg.edit_text(
-                f"⚠️ YouTube загрузчик недоступен\n\nНужно установить yt-dlp для обработки YouTube видео.",
+                f"⚠️ YouTube процессор недоступен\n\nНужно установить youtube-transcript-api или yt-dlp для обработки YouTube видео.",
                 parse_mode="Markdown"
             )
         
@@ -1856,7 +1918,7 @@ async def health_check(request):
 
 async def startup():
     """Initialize the bot systems"""
-    global openai_client, text_processor, speech_pipeline, redis_client, archetype_system, button_ui_manager, summary_engine, youtube_downloader
+    global openai_client, text_processor, speech_pipeline, redis_client, archetype_system, button_ui_manager, summary_engine, youtube_processor
     
     logger.info("🚀 BOT STARTUP - Railway Deployment Check")
     logger.info("========================================")
@@ -1967,17 +2029,17 @@ async def startup():
             summary_engine = None
             logger.error("SummaryEngine disabled (no OpenAI client)")
         
-        # Initialize YouTube downloader
-        logger.info("Initializing YouTube downloader...")
+        # Initialize YouTube hybrid processor
+        logger.info("Initializing YouTube hybrid processor...")
         try:
-            youtube_downloader = create_youtube_downloader()
-            if youtube_downloader.available:
-                logger.info("✅ YouTube downloader initialized")
+            youtube_processor = create_youtube_hybrid_processor()
+            if youtube_processor.transcript_api_available or youtube_processor.yt_dlp_available:
+                logger.info(f"✅ YouTube hybrid processor initialized (transcript_api={youtube_processor.transcript_api_available}, yt_dlp={youtube_processor.yt_dlp_available})")
             else:
-                logger.warning("⚠️ YouTube downloader not available (yt-dlp missing)")
+                logger.warning("⚠️ YouTube processor not available (both transcript API and yt-dlp missing)")
         except Exception as yt_error:
-            logger.error(f"YouTube downloader initialization failed: {yt_error}")
-            youtube_downloader = None
+            logger.error(f"YouTube hybrid processor initialization failed: {yt_error}")
+            youtube_processor = None
         
         # Summarize startup status
         logger.info("=== STARTUP COMPLETED SUCCESSFULLY ===")
@@ -1987,7 +2049,7 @@ async def startup():
         logger.info(f"🤖 Archetype System: {'✅ Ready' if archetype_system else '❌ Disabled'}")
         logger.info(f"🎛️ Button UI Manager: {'✅ Full features' if button_ui_manager else '✅ Fallback mode'}")
         logger.info(f"📊 SummaryEngine: {'✅ Enabled' if summary_engine and summary_engine.enabled else '✅ Disabled' if summary_engine else '❌ Failed'}")
-        logger.info(f"🎥 YouTube Downloader: {'✅ Ready' if youtube_downloader and youtube_downloader.available else '❌ Failed'}")
+        logger.info(f"🎥 YouTube Processor: {'✅ Ready' if youtube_processor and (youtube_processor.transcript_api_available or youtube_processor.yt_dlp_available) else '❌ Failed'}")
         logger.info("===========================================")
         
     except Exception as e:
