@@ -8,6 +8,7 @@ import asyncio
 import logging
 import os
 import sys
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -108,16 +109,87 @@ async def process_with_summary_engine(text: str, content_type: ContentType, dura
         return None
 
 
-def create_transcript_buttons() -> InlineKeyboardMarkup:
-    """Create inline keyboard with transcript buttons"""
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(text="📝 Показать транскрипт", callback_data="transcript"),
-            InlineKeyboardButton(text="📄 Скачать .txt", callback_data="download")
-        ]
-    ])
-    logger.info("Created transcript buttons with callback_data: transcript, download")
-    return keyboard
+def create_command_footer() -> str:
+    """Create command footer for messages"""
+    return """
+
+---
+💡 **Команды:**
+• `/transcript` - показать транскрипт
+• `/summary` - получить саммари
+• `/advice` - получить совет
+• `/анализ` - психологический анализ
+• `/layers` - глубокий анализ"""
+
+
+def extract_youtube_url(text: str) -> Optional[str]:
+    """Extract YouTube URL from text"""
+    # YouTube URL patterns
+    patterns = [
+        r'(?:https?://)?(?:www\.)?youtube\.com/watch\?v=([a-zA-Z0-9_-]+)',
+        r'(?:https?://)?(?:www\.)?youtu\.be/([a-zA-Z0-9_-]+)',
+        r'(?:https?://)?(?:www\.)?youtube\.com/embed/([a-zA-Z0-9_-]+)',
+        r'(?:https?://)?(?:www\.)?youtube\.com/v/([a-zA-Z0-9_-]+)'
+    ]
+    
+    for pattern in patterns:
+        match = re.search(pattern, text)
+        if match:
+            video_id = match.group(1)
+            return f"https://www.youtube.com/watch?v={video_id}"
+    
+    return None
+
+
+def is_youtube_url(text: str) -> bool:
+    """Check if text contains YouTube URL"""
+    return extract_youtube_url(text) is not None
+
+
+async def handle_youtube_url(message: Message, youtube_url: str, user_id: str):
+    """Handle YouTube URL - create TLDR summary"""
+    try:
+        chat_id = str(message.chat.id)
+        
+        # Send processing notification
+        processing_msg = await message.answer("🎥 Анализируем YouTube видео...")
+        
+        # Store the URL for commands
+        import time
+        chat_last_messages[chat_id] = {
+            "text": youtube_url,
+            "timestamp": time.time(),
+            "type": "youtube",
+            "user_id": user_id
+        }
+        logger.info(f"Stored YouTube URL for chat {chat_id}, user {user_id}")
+        
+        # Create YouTube TLDR summary
+        youtube_summary = f"""🎥 **YouTube TLDR**
+
+**Ссылка:** {youtube_url}
+
+📝 **Что это:**
+• YouTube видео для анализа
+• Используйте команды ниже для получения TLDR
+
+💡 **Команды для YouTube:**
+• `/summary` - получить TLDR саммари
+• `/transcript` - получить информацию о видео
+• `/advice` - получить совет на основе видео
+• `/анализ` - анализ контента
+• `/layers` - глубокий анализ
+
+⚠️ **Примечание:** Для полного TLDR видео нужно использовать внешние сервисы (например, YouTube Transcript API или Whisper для аудио)"""
+        
+        await processing_msg.edit_text(
+            youtube_summary + create_command_footer(),
+            parse_mode="Markdown"
+        )
+        
+    except Exception as e:
+        logger.error(f"Error handling YouTube URL: {e}")
+        await message.answer("❌ Ошибка при обработке YouTube ссылки")
 
 
 async def send_transcript_text(message: Message, text: str, chat_id: str, user_id: str = None):
@@ -362,6 +434,36 @@ async def cmd_summary(message: Message):
         text = last_msg_data["text"]
         msg_type = last_msg_data["type"]
         
+        # Handle YouTube URL specially
+        if msg_type == "youtube":
+            youtube_url = extract_youtube_url(text)
+            if youtube_url:
+                youtube_summary = f"""🎥 **YouTube TLDR Summary**
+
+**Видео:** {youtube_url}
+
+📝 **TLDR:**
+• Это YouTube видео для анализа
+• Для полного TLDR нужен доступ к транскрипту или аудио
+• Используйте команды ниже для дополнительного анализа
+
+💡 **Доступные действия:**
+• `/transcript` - получить информацию о видео
+• `/advice` - получить совет на основе контекста
+• `/анализ` - анализ ссылки и контекста
+• `/layers` - глубокий анализ
+
+⚠️ **Для полного TLDR видео:**
+• Нужен YouTube Transcript API
+• Или загрузка аудио через yt-dlp
+• Или ручной анализ описания и метаданных"""
+                
+                await message.answer(
+                    youtube_summary + create_command_footer(),
+                    parse_mode="Markdown"
+                )
+                return
+        
         # Try SummaryEngine first
         if summary_engine and summary_engine.enabled:
             content_type = ContentType.TELEGRAM_VOICE if msg_type == "voice" else ContentType.TELEGRAM_VIDEO_NOTE if msg_type == "video" else ContentType.TEXT_INPUT
@@ -373,9 +475,8 @@ async def cmd_summary(message: Message):
             
             if result.success:
                 await message.answer(
-                    result.summary, 
-                    parse_mode="Markdown",
-                    reply_markup=create_transcript_buttons()
+                    result.summary + create_command_footer(), 
+                    parse_mode="Markdown"
                 )
                 return
         
@@ -396,9 +497,8 @@ async def cmd_summary(message: Message):
 {processing_result.actions if hasattr(processing_result, 'actions') and processing_result.actions else '• Действия не требуются'}"""
                 
                 await message.answer(
-                    simplified_output, 
-                    parse_mode="Markdown",
-                    reply_markup=create_transcript_buttons()
+                    simplified_output + create_command_footer(), 
+                    parse_mode="Markdown"
                 )
                 return
                 
@@ -407,9 +507,8 @@ async def cmd_summary(message: Message):
         
         # Final fallback - just show the text
         await message.answer(
-            f"📝 **Текст последнего сообщения**\n\n{text}",
-            parse_mode="Markdown",
-            reply_markup=create_transcript_buttons()
+            f"📝 **Текст последнего сообщения**\n\n{text}" + create_command_footer(),
+            parse_mode="Markdown"
         )
         
     except Exception as e:
@@ -458,6 +557,36 @@ async def cmd_transcript(message: Message):
         # Get message data
         transcript_text = last_msg_data["text"]
         msg_type = last_msg_data["type"]
+        
+        # Handle YouTube URL specially
+        if msg_type == "youtube":
+            youtube_url = extract_youtube_url(transcript_text)
+            if youtube_url:
+                youtube_info = f"""🎥 **YouTube Video Info**
+
+**Ссылка:** {youtube_url}
+
+📝 **Информация:**
+• Тип: YouTube видео
+• Для получения транскрипта нужен YouTube Transcript API
+• Или загрузка аудио через yt-dlp
+
+💡 **Доступные действия:**
+• `/summary` - получить TLDR саммари
+• `/advice` - получить совет
+• `/анализ` - анализ контекста
+• `/layers` - глубокий анализ
+
+⚠️ **Для полного TLDR:**
+• Нужен доступ к транскрипту видео
+• Или загрузка и обработка аудио
+• Или анализ описания и метаданных"""
+                
+                await message.answer(
+                    youtube_info + create_command_footer(),
+                    parse_mode="Markdown"
+                )
+                return
         
         # Send transcript as .txt file
         await send_transcript_text(message, transcript_text.strip(), chat_id, user_id)
@@ -838,9 +967,8 @@ async def handle_voice_message(message: Message):
             if summary_result:
                 # Use SummaryEngine result with inline buttons
                 await processing_msg.edit_text(
-                    summary_result, 
-                    parse_mode="Markdown",
-                    reply_markup=create_transcript_buttons()
+                    summary_result + create_command_footer(), 
+                    parse_mode="Markdown"
                 )
             else:
                 # Fallback to original text processor
@@ -869,9 +997,8 @@ async def handle_voice_message(message: Message):
 • `/layers` - глубокий анализ скрытых смыслов и мотивов"""
                         
                         await processing_msg.edit_text(
-                            simplified_output, 
-                            parse_mode="Markdown",
-                            reply_markup=create_transcript_buttons()
+                            simplified_output + create_command_footer(), 
+                            parse_mode="Markdown"
                         )
                         
                     except Exception as text_error:
@@ -893,9 +1020,8 @@ async def handle_voice_message(message: Message):
 • `/layers` - глубокий анализ скрытых смыслов и мотивов
 """
                         await processing_msg.edit_text(
-                            fallback_text, 
-                            parse_mode="Markdown",
-                            reply_markup=create_transcript_buttons()
+                            fallback_text + create_command_footer(), 
+                            parse_mode="Markdown"
                         )
                 else:
                     # Text processor not initialized - fallback to transcription only
@@ -915,9 +1041,8 @@ async def handle_voice_message(message: Message):
 • `/layers` - глубокий анализ скрытых смыслов и мотивов
 """
                     await processing_msg.edit_text(
-                        fallback_text, 
-                        parse_mode="Markdown",
-                        reply_markup=create_transcript_buttons()
+                        fallback_text + create_command_footer(), 
+                        parse_mode="Markdown"
                     )
             
         except SpeechPipelineError as e:
@@ -994,9 +1119,8 @@ async def handle_video_note(message: Message):
             if summary_result:
                 # Use SummaryEngine result with inline buttons
                 await processing_msg.edit_text(
-                    summary_result, 
-                    parse_mode="Markdown",
-                    reply_markup=create_transcript_buttons()
+                    summary_result + create_command_footer(), 
+                    parse_mode="Markdown"
                 )
             else:
                 # Fallback to original text processor
@@ -1025,9 +1149,8 @@ async def handle_video_note(message: Message):
 • `/layers` - глубокий анализ скрытых смыслов и мотивов"""
                         
                         await processing_msg.edit_text(
-                            simplified_output, 
-                            parse_mode="Markdown",
-                            reply_markup=create_transcript_buttons()
+                            simplified_output + create_command_footer(), 
+                            parse_mode="Markdown"
                         )
                         
                     except Exception as text_error:
@@ -1049,9 +1172,8 @@ async def handle_video_note(message: Message):
 • `/layers` - глубокий анализ скрытых смыслов и мотивов
 """
                         await processing_msg.edit_text(
-                            fallback_text, 
-                            parse_mode="Markdown",
-                            reply_markup=create_transcript_buttons()
+                            fallback_text + create_command_footer(), 
+                            parse_mode="Markdown"
                         )
                 else:
                     # Text processor not initialized - fallback to transcription only
@@ -1071,9 +1193,8 @@ async def handle_video_note(message: Message):
 • `/layers` - глубокий анализ скрытых смыслов и мотивов
 """
                     await processing_msg.edit_text(
-                        fallback_text, 
-                        parse_mode="Markdown",
-                        reply_markup=create_transcript_buttons()
+                        fallback_text + create_command_footer(), 
+                        parse_mode="Markdown"
                     )
             
         except SpeechPipelineError as e:
@@ -1109,6 +1230,12 @@ async def handle_text_message(message: Message):
             
         user_id = str(message.from_user.id)
         text_content = message.text.strip()
+        
+        # Check for YouTube URL
+        youtube_url = extract_youtube_url(text_content)
+        if youtube_url:
+            await handle_youtube_url(message, youtube_url, user_id)
+            return
         
         # Check for minimum text length
         if len(text_content) < 5:
@@ -1453,15 +1580,10 @@ async def handle_button_callback(callback_query: CallbackQuery):
         
         logger.info(f"Callback received: data='{data}', user_id={user_id}, chat_id={chat_id}")
         
-        # Handle transcript buttons
-        if data == "transcript":
-            logger.info(f"Handling transcript button for user {user_id} in chat {chat_id}")
-            await handle_transcript_button(callback_query)
-            return
-        elif data == "download":
-            logger.info(f"Handling download button for user {user_id} in chat {chat_id}")
-            await handle_download_button(callback_query)
-            return
+        # Handle other button interactions (if any)
+        logger.info(f"Unknown callback data: {data}")
+        await callback_query.answer("❌ Неизвестная команда", show_alert=True)
+        return
         
         # Handle Redis-dependent features
         if button_ui_manager:
@@ -1489,58 +1611,7 @@ async def handle_button_callback(callback_query: CallbackQuery):
         await callback_query.answer("❌ Ошибка обработки", show_alert=True)
 
 
-async def handle_transcript_button(callback_query: CallbackQuery):
-    """Handle transcript button - same logic as /transcript command"""
-    try:
-        user_id = str(callback_query.from_user.id)
-        chat_id = str(callback_query.message.chat.id)
-        
-        logger.info(f"handle_transcript_button: user_id={user_id}, chat_id={chat_id}")
-        logger.info(f"Available chats: {list(chat_last_messages.keys())}")
-        
-        # Get last message data
-        last_msg_data = await get_last_message_data(chat_id, user_id)
-        if not last_msg_data:
-            logger.warning(f"No message data found for chat {chat_id}, user {user_id}")
-            await callback_query.answer("📄 Транскрипт недоступен", show_alert=True)
-            return
-        
-        transcript_text = last_msg_data["text"]
-        
-        # Send transcript using the same logic as /transcript command
-        await send_transcript_text(callback_query.message, transcript_text.strip(), chat_id, user_id)
-        await callback_query.answer("✅ Транскрипт отправлен")
-            
-    except Exception as e:
-        logger.error(f"Error handling transcript button: {e}")
-        await callback_query.answer("❌ Ошибка при получении транскрипта", show_alert=True)
 
-
-async def handle_download_button(callback_query: CallbackQuery):
-    """Handle download button - always send as file"""
-    try:
-        user_id = str(callback_query.from_user.id)
-        chat_id = str(callback_query.message.chat.id)
-        
-        logger.info(f"handle_download_button: user_id={user_id}, chat_id={chat_id}")
-        logger.info(f"Available chats: {list(chat_last_messages.keys())}")
-        
-        # Get last message data
-        last_msg_data = await get_last_message_data(chat_id, user_id)
-        if not last_msg_data:
-            logger.warning(f"No message data found for chat {chat_id}, user {user_id}")
-            await callback_query.answer("📄 Нет данных для скачивания", show_alert=True)
-            return
-        
-        text = last_msg_data["text"]
-        
-        # Always send as file for download button
-        await send_transcript_text(callback_query.message, text, chat_id, user_id)
-        await callback_query.answer("✅ Файл отправлен")
-        
-    except Exception as e:
-        logger.error(f"Error handling download button: {e}")
-        await callback_query.answer("❌ Ошибка при скачивании файла", show_alert=True)
 
 
 @dp.error()
