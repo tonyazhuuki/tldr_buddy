@@ -1,0 +1,64 @@
+{
+  "timestamp": "2025-08-13T21:54:41.158304",
+  "duration_seconds": 0.000196,
+  "total_tests": 9,
+  "passed_tests": 5,
+  "failed_tests": 4,
+  "success_rate": 55.55555555555556,
+  "results": [
+    {
+      "test": "API Connection",
+      "success": false,
+      "details": "OpenAI client not created",
+      "timestamp": "2025-08-13T21:54:41.158133"
+    },
+    {
+      "test": "CHAT Mode",
+      "success": false,
+      "details": "Error: OpenAI client not available",
+      "timestamp": "2025-08-13T21:54:41.158202"
+    },
+    {
+      "test": "LONGFORM Mode",
+      "success": false,
+      "details": "Error: OpenAI client not available",
+      "timestamp": "2025-08-13T21:54:41.158236"
+    },
+    {
+      "test": "Mode: telegram_voice",
+      "success": true,
+      "details": "Expected: chat, Got: chat",
+      "timestamp": "2025-08-13T21:54:41.158256"
+    },
+    {
+      "test": "Mode: telegram_video_note",
+      "success": true,
+      "details": "Expected: chat, Got: chat",
+      "timestamp": "2025-08-13T21:54:41.158264"
+    },
+    {
+      "test": "Mode: telegram_document",
+      "success": true,
+      "details": "Expected: longform, Got: longform",
+      "timestamp": "2025-08-13T21:54:41.158270"
+    },
+    {
+      "test": "Mode: telegram_video",
+      "success": true,
+      "details": "Expected: longform, Got: longform",
+      "timestamp": "2025-08-13T21:54:41.158274"
+    },
+    {
+      "test": "Mode Determination Overall",
+      "success": true,
+      "details": "4 test cases",
+      "timestamp": "2025-08-13T21:54:41.158277"
+    },
+    {
+      "test": "Performance",
+      "success": false,
+      "details": "Error: OpenAI client not available",
+      "timestamp": "2025-08-13T21:54:41.158300"
+    }
+  ]
+}

@@ -11864,3 +11864,107 @@
 2025-08-01 22:57:12,791 - aiogram.dispatcher - INFO - Polling stopped
 2025-08-01 22:57:13,059 - process_manager - INFO - Блокировка освобождена: /Users/zhuuki/Cursor/FirstProject/.bot_instance.lock
 2025-08-01 22:57:13,060 - __main__ - INFO - ✅ Process manager очищен
+2025-08-13 22:51:35,996 - main - INFO - 🚀 BOT STARTUP - Railway Deployment Check
+2025-08-13 22:51:35,997 - main - INFO - ========================================
+2025-08-13 22:51:35,997 - main - INFO - 🆕 VERSION: 2025-08-02 ENHANCED v3.2
+2025-08-13 22:51:35,997 - main - INFO - 🆕 FEATURE: Simplified analysis + deep layers command
+2025-08-13 22:51:35,997 - main - INFO - 🆕 SIMPLIFIED: Basic output, complex analysis under /layers
+2025-08-13 22:51:35,997 - main - INFO - 🆕 COMMANDS: /transcript /advice /layers work reliably
+2025-08-13 22:51:35,997 - main - INFO - ========================================
+2025-08-13 22:51:35,997 - main - INFO - Python version: 3.13.5 (main, Jun 11 2025, 15:36:57) [Clang 16.0.0 (clang-1600.0.26.6)]
+2025-08-13 22:51:35,997 - main - INFO - Working directory: /Users/zhuuki/Cursor/FirstProject
+2025-08-13 22:51:35,997 - main - INFO - === STARTUP INITIALIZATION ===
+2025-08-13 22:51:35,997 - main - INFO - Environment check:
+2025-08-13 22:51:35,997 - main - INFO - - TELEGRAM_TOKEN: ✓ Set
+2025-08-13 22:51:35,997 - main - INFO - - OPENAI_API_KEY: ✓ Set
+2025-08-13 22:51:35,997 - main - INFO - - WEBHOOK_URL: Not set (polling mode)
+2025-08-13 22:51:35,997 - main - INFO - - PORT: Default
+2025-08-13 22:51:35,997 - main - INFO - Initializing speech processing pipeline...
+2025-08-13 22:51:35,997 - speech_pipeline - INFO - Creating OpenAI API-based speech pipeline...
+2025-08-13 22:51:36,030 - speech_recognizer - INFO - Initializing OpenAI API Speech Recognizer...
+2025-08-13 22:51:36,030 - speech_recognizer - INFO - Verifying OpenAI API access...
+2025-08-13 22:51:36,030 - speech_recognizer - INFO - OpenAI API Speech Recognizer initialized successfully
+2025-08-13 22:51:36,030 - speech_pipeline - INFO - OpenAI API-based speech pipeline created and initialized successfully
+2025-08-13 22:51:36,030 - main - INFO - ✓ Speech processing pipeline initialized successfully
+2025-08-13 22:51:36,030 - main - INFO - Initializing text processor...
+2025-08-13 22:51:36,037 - text_processor - INFO - Loaded mode: TONE (model: gpt-4o)
+2025-08-13 22:51:36,037 - text_processor - INFO - Loaded mode: DEFAULT (model: gpt-4o)
+2025-08-13 22:51:36,037 - text_processor - INFO - Loaded 2 modes: ['TONE', 'DEFAULT']
+2025-08-13 22:51:36,037 - main - INFO - ✓ Text processor initialized successfully
+2025-08-13 22:51:36,037 - main - INFO - Initializing enhanced systems...
+2025-08-13 22:51:36,037 - main - INFO - Attempting Redis connection to localhost:6379
+2025-08-13 22:51:36,037 - main - INFO - Redis password configured: No
+2025-08-13 22:51:36,043 - main - INFO - ✅ Redis client initialized and connected successfully
+2025-08-13 22:51:36,043 - main - INFO - ✅ Enhanced UI features will be ENABLED
+2025-08-13 22:51:36,043 - main - INFO - Initializing archetype system...
+2025-08-13 22:51:36,043 - archetype_system - INFO - Loaded EMPATH archetype configuration
+2025-08-13 22:51:36,043 - archetype_system - INFO - Loaded META-SAGE archetype configuration
+2025-08-13 22:51:36,044 - archetype_system - INFO - Loaded TRICKSTER archetype configuration
+2025-08-13 22:51:36,044 - archetype_system - INFO - Loaded CRAZY-WISDOM archetype configuration
+2025-08-13 22:51:36,044 - main - INFO - ✓ Archetype system initialized
+2025-08-13 22:51:36,044 - main - INFO - Initializing button UI manager... Redis: True, Archetype: True
+2025-08-13 22:51:36,044 - main - INFO - ✓ Button UI manager initialized
+2025-08-13 22:51:36,044 - main - INFO - Initializing SummaryEngine...
+2025-08-13 22:51:36,044 - summary_engine - INFO - SummaryEngine initialized, enabled: True
+2025-08-13 22:51:36,044 - summary_engine - INFO - SummaryEngine enabled
+2025-08-13 22:51:36,044 - main - INFO - ✅ SummaryEngine initialized and ENABLED
+2025-08-13 22:51:36,044 - main - INFO - === STARTUP COMPLETED SUCCESSFULLY ===
+2025-08-13 22:51:36,044 - main - INFO - 🎤 Speech Pipeline: ✅ Ready
+2025-08-13 22:51:36,044 - main - INFO - 📝 Text Processor: ✅ Ready
+2025-08-13 22:51:36,044 - main - INFO - 🔗 Redis Client: ✅ Connected
+2025-08-13 22:51:36,044 - main - INFO - 🤖 Archetype System: ✅ Ready
+2025-08-13 22:51:36,044 - main - INFO - 🎛️ Button UI Manager: ✅ Full features
+2025-08-13 22:51:36,044 - main - INFO - 📊 SummaryEngine: ✅ Enabled
+2025-08-13 22:51:36,044 - main - INFO - ===========================================
+2025-08-13 22:51:44,657 - main - INFO - 🚀 BOT STARTUP - Railway Deployment Check
+2025-08-13 22:51:44,657 - main - INFO - ========================================
+2025-08-13 22:51:44,657 - main - INFO - 🆕 VERSION: 2025-08-02 ENHANCED v3.2
+2025-08-13 22:51:44,657 - main - INFO - 🆕 FEATURE: Simplified analysis + deep layers command
+2025-08-13 22:51:44,657 - main - INFO - 🆕 SIMPLIFIED: Basic output, complex analysis under /layers
+2025-08-13 22:51:44,657 - main - INFO - 🆕 COMMANDS: /transcript /advice /layers work reliably
+2025-08-13 22:51:44,657 - main - INFO - ========================================
+2025-08-13 22:51:44,657 - main - INFO - Python version: 3.13.5 (main, Jun 11 2025, 15:36:57) [Clang 16.0.0 (clang-1600.0.26.6)]
+2025-08-13 22:51:44,657 - main - INFO - Working directory: /Users/zhuuki/Cursor/FirstProject
+2025-08-13 22:51:44,657 - main - INFO - === STARTUP INITIALIZATION ===
+2025-08-13 22:51:44,657 - main - INFO - Environment check:
+2025-08-13 22:51:44,657 - main - INFO - - TELEGRAM_TOKEN: ✓ Set
+2025-08-13 22:51:44,658 - main - INFO - - OPENAI_API_KEY: ✓ Set
+2025-08-13 22:51:44,658 - main - INFO - - WEBHOOK_URL: Not set (polling mode)
+2025-08-13 22:51:44,658 - main - INFO - - PORT: Default
+2025-08-13 22:51:44,658 - main - INFO - Initializing speech processing pipeline...
+2025-08-13 22:51:44,658 - speech_pipeline - INFO - Creating OpenAI API-based speech pipeline...
+2025-08-13 22:51:44,690 - speech_recognizer - INFO - Initializing OpenAI API Speech Recognizer...
+2025-08-13 22:51:44,690 - speech_recognizer - INFO - Verifying OpenAI API access...
+2025-08-13 22:51:44,690 - speech_recognizer - INFO - OpenAI API Speech Recognizer initialized successfully
+2025-08-13 22:51:44,690 - speech_pipeline - INFO - OpenAI API-based speech pipeline created and initialized successfully
+2025-08-13 22:51:44,690 - main - INFO - ✓ Speech processing pipeline initialized successfully
+2025-08-13 22:51:44,690 - main - INFO - Initializing text processor...
+2025-08-13 22:51:44,699 - text_processor - INFO - Loaded mode: TONE (model: gpt-4o)
+2025-08-13 22:51:44,699 - text_processor - INFO - Loaded mode: DEFAULT (model: gpt-4o)
+2025-08-13 22:51:44,701 - text_processor - INFO - Loaded 2 modes: ['TONE', 'DEFAULT']
+2025-08-13 22:51:44,701 - main - INFO - ✓ Text processor initialized successfully
+2025-08-13 22:51:44,701 - main - INFO - Initializing enhanced systems...
+2025-08-13 22:51:44,701 - main - INFO - Attempting Redis connection to localhost:6379
+2025-08-13 22:51:44,701 - main - INFO - Redis password configured: No
+2025-08-13 22:51:44,704 - main - INFO - ✅ Redis client initialized and connected successfully
+2025-08-13 22:51:44,704 - main - INFO - ✅ Enhanced UI features will be ENABLED
+2025-08-13 22:51:44,704 - main - INFO - Initializing archetype system...
+2025-08-13 22:51:44,705 - archetype_system - INFO - Loaded EMPATH archetype configuration
+2025-08-13 22:51:44,705 - archetype_system - INFO - Loaded META-SAGE archetype configuration
+2025-08-13 22:51:44,706 - archetype_system - INFO - Loaded TRICKSTER archetype configuration
+2025-08-13 22:51:44,706 - archetype_system - INFO - Loaded CRAZY-WISDOM archetype configuration
+2025-08-13 22:51:44,706 - main - INFO - ✓ Archetype system initialized
+2025-08-13 22:51:44,706 - main - INFO - Initializing button UI manager... Redis: True, Archetype: True
+2025-08-13 22:51:44,706 - main - INFO - ✓ Button UI manager initialized
+2025-08-13 22:51:44,706 - main - INFO - Initializing SummaryEngine...
+2025-08-13 22:51:44,706 - summary_engine - INFO - SummaryEngine initialized, enabled: True
+2025-08-13 22:51:44,706 - summary_engine - INFO - SummaryEngine enabled
+2025-08-13 22:51:44,706 - main - INFO - ✅ SummaryEngine initialized and ENABLED
+2025-08-13 22:51:44,706 - main - INFO - === STARTUP COMPLETED SUCCESSFULLY ===
+2025-08-13 22:51:44,706 - main - INFO - 🎤 Speech Pipeline: ✅ Ready
+2025-08-13 22:51:44,706 - main - INFO - 📝 Text Processor: ✅ Ready
+2025-08-13 22:51:44,707 - main - INFO - 🔗 Redis Client: ✅ Connected
+2025-08-13 22:51:44,707 - main - INFO - 🤖 Archetype System: ✅ Ready
+2025-08-13 22:51:44,707 - main - INFO - 🎛️ Button UI Manager: ✅ Full features
+2025-08-13 22:51:44,707 - main - INFO - 📊 SummaryEngine: ✅ Enabled
+2025-08-13 22:51:44,707 - main - INFO - ===========================================

@@ -1,0 +1,112 @@
+{
+  "timestamp": "2025-08-13T21:09:58.042747",
+  "duration_seconds": 0.000272,
+  "total_tests": 17,
+  "passed_tests": 16,
+  "failed_tests": 1,
+  "success_rate": 94.11764705882352,
+  "results": [
+    {
+      "test": "SummaryEngine Creation",
+      "success": true,
+      "details": "Engine created successfully",
+      "timestamp": "2025-08-13T21:09:58.042499"
+    },
+    {
+      "test": "Mode: telegram_voice",
+      "success": true,
+      "details": "Expected: CHAT, Got: chat",
+      "timestamp": "2025-08-13T21:09:58.042519"
+    },
+    {
+      "test": "Mode: telegram_video_note",
+      "success": true,
+      "details": "Expected: CHAT, Got: chat",
+      "timestamp": "2025-08-13T21:09:58.042528"
+    },
+    {
+      "test": "Mode: telegram_document",
+      "success": true,
+      "details": "Expected: LONGFORM, Got: longform",
+      "timestamp": "2025-08-13T21:09:58.042534"
+    },
+    {
+      "test": "Mode: telegram_video",
+      "success": true,
+      "details": "Expected: LONGFORM, Got: longform",
+      "timestamp": "2025-08-13T21:09:58.042540"
+    },
+    {
+      "test": "Mode: uploaded_url",
+      "success": true,
+      "details": "Expected: LONGFORM, Got: longform",
+      "timestamp": "2025-08-13T21:09:58.042624"
+    },
+    {
+      "test": "Mode Determination Overall",
+      "success": true,
+      "details": "5 test cases",
+      "timestamp": "2025-08-13T21:09:58.042628"
+    },
+    {
+      "test": "Fallback: Empty text",
+      "success": true,
+      "details": "Response length: 49",
+      "timestamp": "2025-08-13T21:09:58.042634"
+    },
+    {
+      "test": "Fallback: Noise text",
+      "success": true,
+      "details": "Response length: 40",
+      "timestamp": "2025-08-13T21:09:58.042640"
+    },
+    {
+      "test": "Fallback: Normal text",
+      "success": true,
+      "details": "Response length: 69",
+      "timestamp": "2025-08-13T21:09:58.042646"
+    },
+    {
+      "test": "Fallback Responses Overall",
+      "success": true,
+      "details": "3 test cases",
+      "timestamp": "2025-08-13T21:09:58.042648"
+    },
+    {
+      "test": "Processing Without OpenAI",
+      "success": false,
+      "details": "Success: False, Error: SummaryEngine is disabled",
+      "timestamp": "2025-08-13T21:09:58.042702"
+    },
+    {
+      "test": "Configuration Updates",
+      "success": true,
+      "details": "Updated max_tokens: 1100 → 1200",
+      "timestamp": "2025-08-13T21:09:58.042711"
+    },
+    {
+      "test": "Enable/Disable",
+      "success": true,
+      "details": "States: False → False → True",
+      "timestamp": "2025-08-13T21:09:58.042716"
+    },
+    {
+      "test": "Integration: telegram_voice",
+      "success": true,
+      "details": "Result: None (expected)",
+      "timestamp": "2025-08-13T21:09:58.042732"
+    },
+    {
+      "test": "Integration: telegram_document",
+      "success": true,
+      "details": "Result: None (expected)",
+      "timestamp": "2025-08-13T21:09:58.042740"
+    },
+    {
+      "test": "Integration Simulation Overall",
+      "success": true,
+      "details": "2 test cases",
+      "timestamp": "2025-08-13T21:09:58.042743"
+    }
+  ]
+}
