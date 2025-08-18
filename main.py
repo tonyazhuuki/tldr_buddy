@@ -308,13 +308,13 @@ async def handle_youtube_url(message: Message, youtube_url: str, user_id: str):
                 # Both methods failed
                 error_msg = result.get("error", "Unknown error")
                 await processing_msg.edit_text(
-                    f"❌ Не удалось обработать видео\n\nОшибка: {error_msg}\n\nВозможные причины:\n• Видео недоступно\n• Нет субтитров\n• Видео слишком длинное",
+                    f"❌ **Ошибка обработки YouTube видео**\n\n**Ссылка:** {youtube_url}\n\n**Ошибка:** {error_msg}\n\n**Возможные причины:**\n• YouTube блокирует запросы с сервера\n• Видео недоступно или приватное\n• Нет субтитров и видео слишком длинное\n• Ошибка сети или сервиса\n\n**Что можно сделать:**\n• Попробуйте другую ссылку\n• Проверьте доступность видео\n• Обратитесь к администратору",
                     parse_mode="Markdown"
                 )
         else:
             # YouTube processor not available
             await processing_msg.edit_text(
-                f"⚠️ YouTube процессор недоступен\n\nНужно установить youtube-transcript-api или yt-dlp для обработки YouTube видео.",
+                f"❌ **YouTube процессор недоступен**\n\n**Ссылка:** {youtube_url}\n\n**Причина:** Не установлены необходимые библиотеки\n\n**Что нужно:**\n• youtube-transcript-api для субтитров\n• yt-dlp для загрузки видео\n\n**Обратитесь к администратору для настройки.**",
                 parse_mode="Markdown"
             )
         
@@ -658,28 +658,25 @@ async def cmd_summary(message: Message):
                 )
                 return
             else:
-                # Basic YouTube URL without transcript
+                # Basic YouTube URL without transcript - this means processing failed
                 youtube_url = extract_youtube_url(text)
                 if youtube_url:
-                    youtube_summary = f"""🎥 **YouTube TLDR Summary**
+                    youtube_summary = f"""❌ **Ошибка обработки YouTube видео**
 
-**Видео:** {youtube_url}
+**Ссылка:** {youtube_url}
 
-📝 **TLDR:**
-• Это YouTube видео для анализа
-• Для полного TLDR нужно загрузить и обработать видео
-• Используйте команды ниже для дополнительного анализа
+**Причина:** Не удалось получить транскрипт или загрузить видео
 
-💡 **Доступные действия:**
-• `/transcript` - получить информацию о видео
-• `/advice` - получить совет на основе контекста
-• `/анализ` - анализ ссылки и контекста
-• `/layers` - глубокий анализ
+**Возможные причины:**
+• YouTube блокирует запросы с сервера
+• Видео недоступно или приватное
+• Нет субтитров и видео слишком длинное
+• Ошибка сети или сервиса
 
-⚠️ **Для полного TLDR видео:**
-• Нужно загрузить видео через yt-dlp
-• Обработать через Whisper
-• Проанализировать через SummaryEngine"""
+**Что можно сделать:**
+• Попробуйте другую ссылку
+• Проверьте доступность видео
+• Обратитесь к администратору"""
                     
                     await message.answer(
                         youtube_summary + create_command_footer(),
