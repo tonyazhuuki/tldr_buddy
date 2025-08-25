@@ -12,18 +12,13 @@ from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 
-# Import the actual get_transcript function (yt-dlp version)
+# Import the actual get_transcript function (yt-dlp version only)
 try:
     from get_transcript_ytdlp import get_transcript
     logger.info("✅ Using get_transcript_ytdlp (yt-dlp version)")
 except ImportError:
-    try:
-        # Fallback to original version
-        from get_transcript import get_transcript
-        logger.info("✅ Using get_transcript (youtube-transcript-api version)")
-    except ImportError:
-        logger.error("❌ Neither get_transcript_ytdlp nor get_transcript available")
-        get_transcript = None
+    logger.error("❌ get_transcript_ytdlp not available")
+    get_transcript = None
 
 
 @dataclass

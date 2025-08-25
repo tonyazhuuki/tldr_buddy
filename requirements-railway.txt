@@ -39,7 +39,7 @@ jsonschema==4.19.2
 # Timezone Support
 pytz==2024.1
 
-# YouTube Support (MCP Integration) - stable versions
+# YouTube Support (MCP Integration) - yt-dlp only
 yt-dlp==2024.12.17
 requests==2.32.4
 

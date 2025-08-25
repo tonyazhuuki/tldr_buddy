@@ -127,29 +127,15 @@ def download_and_parse_vtt(url):
         return None
 
 def get_transcript(video_id, lang="ru"):
-    """Main function - try yt-dlp first, fallback to youtube-transcript-api"""
+    """Main function - use only yt-dlp, no fallbacks"""
     try:
-        # Try yt-dlp first
+        # Use only yt-dlp
         transcript = get_transcript_ytdlp(video_id, lang)
         if transcript:
             return transcript
-        
-        # Fallback to youtube-transcript-api if available
-        try:
-            from youtube_transcript_api import YouTubeTranscriptApi
-            api = YouTubeTranscriptApi()
-            result = api.fetch(video_id, languages=[lang, 'en', 'auto'])
-            
-            if result and result.snippets:
-                formatted_text = "\n".join(snippet.text for snippet in result.snippets)
-                print(f"✅ Got transcript via youtube-transcript-api")
-                return formatted_text
-        except ImportError:
-            print("youtube-transcript-api not available")
-        except Exception as e:
-            print(f"youtube-transcript-api failed: {e}")
-        
-        return None
+        else:
+            print(f"❌ No transcript available for video {video_id}")
+            return None
         
     except Exception as e:
         print(f"❌ Error in get_transcript: {e}")

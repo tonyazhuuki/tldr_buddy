@@ -318,7 +318,7 @@ async def handle_youtube_url(message: Message, youtube_url: str, user_id: str):
         else:
             # YouTube processor not available
             await processing_msg.edit_text(
-                f"❌ **YouTube процессор недоступен**\n\n**Ссылка:** {youtube_url}\n\n**Причина:** Не установлены необходимые библиотеки\n\n**Что нужно:**\n• youtube-transcript-api для субтитров\n• yt-dlp для загрузки видео\n\n**Обратитесь к администратору для настройки.**",
+                f"❌ **YouTube процессор недоступен**\n\n**Ссылка:** {youtube_url}\n\n**Причина:** Не установлены необходимые библиотеки\n\n**Что нужно:**\n• yt-dlp для загрузки видео и субтитров\n\n**Обратитесь к администратору для настройки.**",
                 parse_mode="Markdown"
             )
         
@@ -401,12 +401,12 @@ async def handle_youtube_url_mcp(message: Message, youtube_url: str, user_id: st
                     )
             else:
                 # MCP processing failed
-                error_msg = f"❌ **Ошибка обработки YouTube видео (MCP)**
+                error_msg = f"""❌ **Ошибка обработки YouTube видео (MCP)**
 
 **Видео ID:** {result.get('video_id', 'Unknown')}
 **Ошибка:** {result.get('error', 'Неизвестная ошибка')}
 
-Попробуйте другую ссылку или используйте обычную обработку YouTube." + create_command_footer()
+Попробуйте другую ссылку или используйте обычную обработку YouTube.""" + create_command_footer()
                 
                 await processing_msg.edit_text(error_msg, parse_mode="Markdown")
         else:
@@ -427,7 +427,7 @@ async def handle_youtube_url_mcp(message: Message, youtube_url: str, user_id: st
 Попробуйте другую ссылку или используйте обычную обработку YouTube." + create_command_footer(),
                 parse_mode="Markdown"
             )
-        except:
+        except Exception as edit_error:
             await message.answer(
                 f"❌ Ошибка обработки YouTube видео: {str(e)}" + create_command_footer(),
                 parse_mode="Markdown"
