@@ -2030,6 +2030,60 @@ async def health_check(request):
         )
 
 
+async def debug_check(request):
+    """Debug check endpoint to verify MCP integration"""
+    try:
+        # Check if MCP files exist
+        import os
+        mcp_files = ["mcp_youtube_real.py", "get_transcript.py"]
+        file_status = {}
+        
+        for file in mcp_files:
+            file_status[file] = os.path.exists(file)
+        
+        # Check if we can import MCP
+        try:
+            from mcp_youtube_real import create_real_mcp_youtube_processor
+            mcp_import = "✅ Success"
+        except ImportError as e:
+            mcp_import = f"❌ Failed: {e}"
+        
+        # Check git commit
+        try:
+            import subprocess
+            result = subprocess.run(['git', 'rev-parse', 'HEAD'], 
+                                  capture_output=True, text=True)
+            if result.returncode == 0:
+                commit_hash = result.stdout.strip()[:8]
+                git_status = f"✅ {commit_hash}"
+            else:
+                git_status = "❌ Failed"
+        except Exception as e:
+            git_status = f"❌ Error: {e}"
+        
+        # Create debug report
+        debug_report = f"""
+🔍 MCP Integration Debug Report
+
+Files:
+- mcp_youtube_real.py: {'✅ Exists' if file_status.get('mcp_youtube_real.py') else '❌ Missing'}
+- get_transcript.py: {'✅ Exists' if file_status.get('get_transcript.py') else '❌ Missing'}
+
+Import:
+- MCP Import: {mcp_import}
+
+Git:
+- Commit: {git_status}
+
+Expected: All files should exist and MCP should import successfully
+"""
+        
+        return web.Response(text=debug_report, status=200)
+        
+    except Exception as e:
+        return web.Response(text=f"Debug check failed: {e}", status=500)
+
+
 async def startup():
     """Initialize the bot systems"""
     global openai_client, text_processor, speech_pipeline, redis_client, archetype_system, button_ui_manager, summary_engine, youtube_processor
@@ -2231,6 +2285,10 @@ async def main():
             # Add health check route FIRST
             app.router.add_get('/health', health_check)
             logger.info("✓ Health check route added")
+            
+            # Add debug check route
+            app.router.add_get('/debug', debug_check)
+            logger.info("✓ Debug check route added")
             
             # Add root route for basic check
             async def root_handler(request):
