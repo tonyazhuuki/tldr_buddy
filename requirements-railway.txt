@@ -40,4 +40,5 @@ pytz==2024.1
 
 # YouTube Support
 yt-dlp==2024.12.17
-youtube-transcript-api==1.2.2 
+youtube-transcript-api==1.2.2
+requests==2.32.4 

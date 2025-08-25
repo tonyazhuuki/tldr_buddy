@@ -38,6 +38,9 @@ from summary_engine import SummaryEngine, ContentType, create_summary_engine
 # Import YouTube hybrid processor
 from youtube_hybrid import create_youtube_hybrid_processor
 
+# Import MCP YouTube processor
+from mcp_youtube_real import create_real_mcp_youtube_processor
+
 # Import process management for single-instance enforcement
 from process_manager import enforce_single_instance
 
@@ -75,6 +78,7 @@ archetype_system = None
 button_ui_manager = None
 summary_engine = None
 youtube_processor = None
+mcp_youtube_processor = None
 
 # Simple in-memory storage for last messages by chat (no Redis needed)
 chat_last_messages = {}  # {chat_id: {"text": str, "timestamp": float, "type": "voice|text", "user_id": str}}
@@ -321,6 +325,113 @@ async def handle_youtube_url(message: Message, youtube_url: str, user_id: str):
     except Exception as e:
         logger.error(f"Error handling YouTube URL: {e}")
         await message.answer("❌ Ошибка при обработке YouTube ссылки")
+
+
+async def handle_youtube_url_mcp(message: Message, youtube_url: str, user_id: str):
+    """Handle YouTube URL using MCP service - get transcript and create TLDR"""
+    try:
+        chat_id = str(message.chat.id)
+        
+        # Send processing notification
+        processing_msg = await message.answer("🎥 Обрабатываем YouTube видео через MCP...")
+        
+        # Process YouTube video with MCP
+        if mcp_youtube_processor and mcp_youtube_processor.available:
+            result = await mcp_youtube_processor.process_youtube_video(youtube_url, prefer_transcript=True)
+            
+            if result["success"]:
+                # Got transcript via MCP
+                transcribed_text = result["text"]
+                duration = result["duration"]
+                language = result["language"]
+                title = result["title"]
+                
+                # Store for commands
+                import time
+                chat_last_messages[chat_id] = {
+                    "text": transcribed_text,
+                    "timestamp": time.time(),
+                    "type": "youtube_mcp",
+                    "user_id": user_id,
+                    "video_id": result["video_id"],
+                    "duration": duration,
+                    "language": language,
+                    "title": title,
+                    "method": "mcp_transcript"
+                }
+                logger.info(f"Stored YouTube transcript via MCP for chat {chat_id}, user {user_id}, duration: {duration}s")
+                
+                # Process with SummaryEngine for TLDR
+                if summary_engine and summary_engine.enabled:
+                    # Always use LONGFORM for YouTube videos as requested
+                    content_type = ContentType.LONGFORM
+                    summary_result = await summary_engine.process_summary(
+                        text=transcribed_text,
+                        content_type=content_type,
+                        duration=duration
+                    )
+                    
+                    if summary_result.success:
+                        youtube_summary = f"""🎥 **YouTube TLDR (MCP)**
+
+**Видео:** {title}
+**ID:** {result["video_id"]}
+**Длительность:** {duration//60}:{duration%60:02d} минут
+**Язык:** {language}
+**Метод:** MCP Transcript Service
+**Транскрипт:** {len(transcribed_text)} символов
+
+{summary_result.summary}"""
+                        
+                        await processing_msg.edit_text(
+                            youtube_summary + create_command_footer(),
+                            parse_mode="Markdown"
+                        )
+                    else:
+                        # Fallback to basic summary
+                        await processing_msg.edit_text(
+                            f"🎥 **YouTube видео обработано (MCP)**\n\n**Видео:** {title}\n**ID:** {result['video_id']}\n\nТранскрипт получен через MCP. Используйте команды для анализа." + create_command_footer(),
+                            parse_mode="Markdown"
+                        )
+                else:
+                    # No SummaryEngine - basic response
+                    await processing_msg.edit_text(
+                        f"🎥 **YouTube видео обработано (MCP)**\n\n**Видео:** {title}\n**ID:** {result['video_id']}\n\nТранскрипт получен через MCP. Используйте команды для анализа." + create_command_footer(),
+                        parse_mode="Markdown"
+                    )
+            else:
+                # MCP processing failed
+                error_msg = f"❌ **Ошибка обработки YouTube видео (MCP)**
+
+**Видео ID:** {result.get('video_id', 'Unknown')}
+**Ошибка:** {result.get('error', 'Неизвестная ошибка')}
+
+Попробуйте другую ссылку или используйте обычную обработку YouTube." + create_command_footer()
+                
+                await processing_msg.edit_text(error_msg, parse_mode="Markdown")
+        else:
+            # MCP processor not available
+            await processing_msg.edit_text(
+                "❌ MCP YouTube процессор недоступен. Попробуйте обычную обработку YouTube." + create_command_footer(),
+                parse_mode="Markdown"
+            )
+            
+    except Exception as e:
+        logger.error(f"Error in handle_youtube_url_mcp: {e}")
+        try:
+            await processing_msg.edit_text(
+                f"❌ **Ошибка обработки YouTube видео (MCP)**
+
+**Ошибка:** {str(e)}
+
+Попробуйте другую ссылку или используйте обычную обработку YouTube." + create_command_footer(),
+                parse_mode="Markdown"
+            )
+        except:
+            await message.answer(
+                f"❌ Ошибка обработки YouTube видео: {str(e)}" + create_command_footer(),
+                parse_mode="Markdown"
+            )
 
 
 async def send_transcript_text(message: Message, text: str, chat_id: str, user_id: str = None):
@@ -1227,13 +1338,13 @@ async def handle_voice_message(message: Message):
                 )
             else:
                 # Fallback to original text processor
-                if text_processor:
-                    try:
-                        processing_result = await text_processor.process_parallel(transcribed_text)
-                        formatted_output = text_processor.format_output(processing_result)
-                        
-                        # Create simplified output - keep practical insights including actions
-                        simplified_output = f"""📝 **Основные мысли**
+            if text_processor:
+                try:
+                    processing_result = await text_processor.process_parallel(transcribed_text)
+                    formatted_output = text_processor.format_output(processing_result)
+                    
+                    # Create simplified output - keep practical insights including actions
+                    simplified_output = f"""📝 **Основные мысли**
 
 {processing_result.summary if hasattr(processing_result, 'summary') else 'Анализ завершен'}
 
@@ -1250,16 +1361,16 @@ async def handle_voice_message(message: Message):
 • `/advice` - получить персональный совет от архетипа
 • `/анализ` - психологический анализ (намерения, эмоции, стиль)
 • `/layers` - глубокий анализ скрытых смыслов и мотивов"""
-                        
+                    
                         await processing_msg.edit_text(
                             simplified_output + create_command_footer(), 
                             parse_mode="Markdown"
                         )
-                        
-                    except Exception as text_error:
-                        logger.error(f"Text processing error: {text_error}")
-                        # Fallback to transcription only
-                        fallback_text = f"""
+                    
+                except Exception as text_error:
+                    logger.error(f"Text processing error: {text_error}")
+                    # Fallback to transcription only
+                    fallback_text = f"""
 📝 **Результат распознавания речи**
 
 **Текст:**
@@ -1278,9 +1389,9 @@ async def handle_voice_message(message: Message):
                             fallback_text + create_command_footer(), 
                             parse_mode="Markdown"
                         )
-                else:
-                    # Text processor not initialized - fallback to transcription only
-                    fallback_text = f"""
+            else:
+                # Text processor not initialized - fallback to transcription only
+                fallback_text = f"""
 📝 **Результат распознавания речи**
 
 **Текст:**
@@ -1379,13 +1490,13 @@ async def handle_video_note(message: Message):
                 )
             else:
                 # Fallback to original text processor
-                if text_processor:
-                    try:
-                        processing_result = await text_processor.process_parallel(transcribed_text)
-                        formatted_output = text_processor.format_output(processing_result)
-                        
-                        # Create simplified output for video notes
-                        simplified_output = f"""📝 **Основные мысли**
+            if text_processor:
+                try:
+                    processing_result = await text_processor.process_parallel(transcribed_text)
+                    formatted_output = text_processor.format_output(processing_result)
+                    
+                    # Create simplified output for video notes
+                    simplified_output = f"""📝 **Основные мысли**
 
 {processing_result.summary if hasattr(processing_result, 'summary') else 'Анализ завершен'}
 
@@ -1402,16 +1513,16 @@ async def handle_video_note(message: Message):
 • `/advice` - получить персональный совет от архетипа
 • `/анализ` - психологический анализ (намерения, эмоции, стиль)
 • `/layers` - глубокий анализ скрытых смыслов и мотивов"""
-                        
+                    
                         await processing_msg.edit_text(
                             simplified_output + create_command_footer(), 
                             parse_mode="Markdown"
                         )
-                        
-                    except Exception as text_error:
-                        logger.error(f"Text processing error: {text_error}")
-                        # Fallback to transcription only
-                        fallback_text = f"""
+                    
+                except Exception as text_error:
+                    logger.error(f"Text processing error: {text_error}")
+                    # Fallback to transcription only
+                    fallback_text = f"""
 📝 **Результат распознавания видео сообщения**
 
 **Текст:**
@@ -1430,9 +1541,9 @@ async def handle_video_note(message: Message):
                             fallback_text + create_command_footer(), 
                             parse_mode="Markdown"
                         )
-                else:
-                    # Text processor not initialized - fallback to transcription only
-                    fallback_text = f"""
+            else:
+                # Text processor not initialized - fallback to transcription only
+                fallback_text = f"""
 📝 **Результат распознавания видео сообщения**
 
 **Текст:**
@@ -1489,7 +1600,13 @@ async def handle_text_message(message: Message):
         # Check for YouTube URL
         youtube_url = extract_youtube_url(text_content)
         if youtube_url:
-            await handle_youtube_url(message, youtube_url, user_id)
+            # Check if MCP YouTube processor is available and enabled
+            if mcp_youtube_processor and mcp_youtube_processor.available:
+                # Use MCP YouTube processor for better transcript quality
+                await handle_youtube_url_mcp(message, youtube_url, user_id)
+            else:
+                # Fallback to regular YouTube processor
+                await handle_youtube_url(message, youtube_url, user_id)
             return
         
         # Check for minimum text length
@@ -2038,6 +2155,15 @@ async def startup():
             logger.error(f"YouTube hybrid processor initialization failed: {yt_error}")
             youtube_processor = None
         
+        # Initialize MCP YouTube processor
+        logger.info("Initializing MCP YouTube processor...")
+        try:
+            mcp_youtube_processor = create_real_mcp_youtube_processor()
+            logger.info("✅ MCP YouTube processor initialized with get_transcript service")
+        except Exception as mcp_error:
+            logger.error(f"MCP YouTube processor initialization failed: {mcp_error}")
+            mcp_youtube_processor = None
+        
         # Summarize startup status
         logger.info("=== STARTUP COMPLETED SUCCESSFULLY ===")
         logger.info(f"🎤 Speech Pipeline: {'✅ Ready' if speech_pipeline else '❌ Failed'}")
@@ -2047,6 +2173,7 @@ async def startup():
         logger.info(f"🎛️ Button UI Manager: {'✅ Full features' if button_ui_manager else '✅ Fallback mode'}")
         logger.info(f"📊 SummaryEngine: {'✅ Enabled' if summary_engine and summary_engine.enabled else '✅ Disabled' if summary_engine else '❌ Failed'}")
         logger.info(f"🎥 YouTube Processor: {'✅ Ready' if youtube_processor and (youtube_processor.transcript_api_available or youtube_processor.yt_dlp_available) else '❌ Failed'}")
+        logger.info(f"🎥 MCP YouTube Processor: {'✅ Ready' if mcp_youtube_processor else '❌ Failed'}")
         logger.info("===========================================")
         
     except Exception as e:
