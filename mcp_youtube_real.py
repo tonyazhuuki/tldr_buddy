@@ -10,14 +10,20 @@ import re
 from typing import Optional, Dict, Any
 from dataclasses import dataclass
 
+logger = logging.getLogger(__name__)
+
 # Import the actual get_transcript function (yt-dlp version)
 try:
     from get_transcript_ytdlp import get_transcript
+    logger.info("✅ Using get_transcript_ytdlp (yt-dlp version)")
 except ImportError:
-    # Fallback to original version
-    from get_transcript import get_transcript
-
-logger = logging.getLogger(__name__)
+    try:
+        # Fallback to original version
+        from get_transcript import get_transcript
+        logger.info("✅ Using get_transcript (youtube-transcript-api version)")
+    except ImportError:
+        logger.error("❌ Neither get_transcript_ytdlp nor get_transcript available")
+        get_transcript = None
 
 
 @dataclass
@@ -35,8 +41,11 @@ class RealMCPYouTubeProcessor:
     """Real MCP YouTube processor using get_transcript service"""
     
     def __init__(self):
-        self.available = True
-        logger.info("Real MCP YouTube Processor initialized with get_transcript service")
+        self.available = get_transcript is not None
+        if self.available:
+            logger.info("✅ Real MCP YouTube Processor initialized with get_transcript service")
+        else:
+            logger.warning("❌ Real MCP YouTube Processor disabled - get_transcript not available")
     
     def extract_video_id(self, url: str) -> Optional[str]:
         """Extract video ID from YouTube URL"""
@@ -119,6 +128,10 @@ class RealMCPYouTubeProcessor:
         
         This integrates with the actual get_transcript function
         """
+        if get_transcript is None:
+            logger.error("get_transcript function not available")
+            return None
+            
         try:
             logger.info(f"Calling get_transcript service for video: {video_id}, lang: {lang}")
             
