@@ -1,7 +1,7 @@
-# Railway Deployment Dependencies - Stable MCP Integration Version
+# Railway Deployment Dependencies - Minimal Version
 # Compatible with Python 3.11 (Railway Docker image)
 
-# Core Bot Framework (stable version)
+# Core Bot Framework
 aiogram==3.10.0
 
 # LLM API Integration
@@ -16,41 +16,22 @@ redis==6.2.0
 # Data Validation
 pydantic==2.8.0
 
-# Audio Processing (minimal)
+# Audio Processing
 ffmpeg-python==0.2.0
 pydub==0.25.1
 
-# Async File I/O
-aiofiles==24.1.0
+# Async File I/O (compatible with aiogram)
+aiofiles==23.2.1
 
 # HTTP Client
 aiohttp==3.9.1
 
-# Numerical Computing (compatible with Python 3.11)
-numpy==1.26.4
-
-# Process Management
-psutil==7.0.0
-filelock==3.13.1
-
-# JSON Schema Validation
-jsonschema==4.19.2
-
-# Timezone Support
-pytz==2024.1
-
-# YouTube Support (MCP Integration) - yt-dlp only
+# YouTube Support (MCP Integration)
 yt-dlp==2025.8.22
 requests==2.32.4
-
-# Async Support
-asyncio-mqtt==0.16.1
 
 # Background Tasks
 apscheduler==3.10.4
 
 # Logging
-structlog==23.2.0
-
-# Additional dependencies that might be needed
-typing-extensions==4.8.0 
+structlog==23.2.0 
