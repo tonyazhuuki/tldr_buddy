@@ -10,8 +10,12 @@ import re
 from typing import Optional, Dict, Any
 from dataclasses import dataclass
 
-# Import the actual get_transcript function
-from get_transcript import get_transcript
+# Import the actual get_transcript function (yt-dlp version)
+try:
+    from get_transcript_ytdlp import get_transcript
+except ImportError:
+    # Fallback to original version
+    from get_transcript import get_transcript
 
 logger = logging.getLogger(__name__)
 

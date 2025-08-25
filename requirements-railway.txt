@@ -41,7 +41,6 @@ pytz==2024.1
 
 # YouTube Support (MCP Integration) - stable versions
 yt-dlp==2024.12.17
-youtube-transcript-api==1.2.2
 requests==2.32.4
 
 # Async Support
