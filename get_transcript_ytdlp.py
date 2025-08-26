@@ -6,46 +6,29 @@ Works in Railway environment
 
 import sys
 import json
-import subprocess
 import tempfile
 import os
+import yt_dlp
 
 def get_transcript_ytdlp(video_id, lang="ru"):
-    """Get transcript for YouTube video using yt-dlp"""
+    """Get transcript for YouTube video using yt-dlp Python API"""
     try:
-        print(f"🔍 Getting transcript for {video_id} using yt-dlp...")
+        print(f"🔍 Getting transcript for {video_id} using yt-dlp Python API...")
         
-        # Use yt-dlp to get transcript
-        cmd = [
-            "yt-dlp",
-            "--write-sub",
-            "--write-auto-sub", 
-            "--sub-lang", lang,
-            "--skip-download",
-            "--dump-json",
-            f"https://www.youtube.com/watch?v={video_id}"
-        ]
+        # Configure yt-dlp options
+        ydl_opts = {
+            'writesubtitles': True,
+            'writeautomaticsub': True,
+            'subtitleslangs': [lang, 'en'],
+            'skip_download': True,
+            'quiet': True,
+            'no_warnings': True,
+        }
         
-        print(f"Running command: {' '.join(cmd)}")
-        
-        # Run yt-dlp command
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=60
-        )
-        
-        if result.returncode != 0:
-            print(f"❌ yt-dlp failed: {result.stderr}")
-            return None
-        
-        # Parse JSON output
-        try:
-            video_info = json.loads(result.stdout)
-        except json.JSONDecodeError:
-            print("❌ Failed to parse yt-dlp JSON output")
-            return None
+        # Create yt-dlp object
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            # Get video info
+            video_info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=False)
         
         # Extract transcript
         transcript_text = ""
@@ -83,9 +66,6 @@ def get_transcript_ytdlp(video_id, lang="ru"):
             print(f"❌ No transcript found for video {video_id}")
             return None
             
-    except subprocess.TimeoutExpired:
-        print(f"❌ yt-dlp timeout for video {video_id}")
-        return None
     except Exception as e:
         print(f"❌ Error getting transcript: {e}")
         return None
@@ -93,18 +73,13 @@ def get_transcript_ytdlp(video_id, lang="ru"):
 def download_and_parse_vtt(url):
     """Download and parse VTT subtitle file"""
     try:
+        import requests
+        
         # Download VTT file
-        result = subprocess.run(
-            ["curl", "-s", url],
-            capture_output=True,
-            text=True,
-            timeout=30
-        )
+        response = requests.get(url, timeout=30)
+        response.raise_for_status()
         
-        if result.returncode != 0:
-            return None
-        
-        vtt_content = result.stdout
+        vtt_content = response.text
         
         # Simple VTT to text conversion
         lines = vtt_content.split('\n')
