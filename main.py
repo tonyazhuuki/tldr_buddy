@@ -420,11 +420,11 @@ async def handle_youtube_url_mcp(message: Message, youtube_url: str, user_id: st
         logger.error(f"Error in handle_youtube_url_mcp: {e}")
         try:
             await processing_msg.edit_text(
-                f"❌ **Ошибка обработки YouTube видео (MCP)**
+                f"""❌ **Ошибка обработки YouTube видео (MCP)**
 
 **Ошибка:** {str(e)}
 
-Попробуйте другую ссылку или используйте обычную обработку YouTube." + create_command_footer(),
+Попробуйте другую ссылку или используйте обычную обработку YouTube.""" + create_command_footer(),
                 parse_mode="Markdown"
             )
         except Exception as edit_error:
@@ -1338,7 +1338,7 @@ async def handle_voice_message(message: Message):
                 )
             else:
                 # Fallback to original text processor
-            if text_processor:
+                if text_processor:
                 try:
                     processing_result = await text_processor.process_parallel(transcribed_text)
                     formatted_output = text_processor.format_output(processing_result)
