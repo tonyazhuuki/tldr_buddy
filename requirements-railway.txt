@@ -33,5 +33,14 @@ requests==2.32.4
 # Background Tasks
 apscheduler==3.10.4
 
+# System Monitoring
+psutil==5.9.8
+
+# File Locking
+filelock==3.13.1
+
+# Timezone Support
+pytz==2024.1
+
 # Logging
 structlog==23.2.0 
