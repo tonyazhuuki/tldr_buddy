@@ -20,8 +20,10 @@ RUN pip install --no-cache-dir -r requirements-railway.txt
 # Copy application code
 COPY . .
 
-# Create necessary directories
-RUN mkdir -p /app/temp /app/logs /app/modes
+# Create necessary directories and set permissions
+RUN mkdir -p /app/temp /app/logs /app/modes && \
+    chmod -R 777 /app/temp /app/logs /app/modes && \
+    chown -R nobody:nogroup /app/temp /app/logs /app/modes
 
 # Set environment variables
 ENV PYTHONPATH=/app

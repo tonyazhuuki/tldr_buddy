@@ -4,6 +4,15 @@ Telegram Voice-to-Insight Pipeline
 Main bot application with aiogram 3
 """
 
+import os
+import sys
+
+# Add app directory to Python path
+app_dir = os.path.dirname(os.path.abspath(__file__))
+if app_dir not in sys.path:
+    sys.path.insert(0, app_dir)
+    print(f"Added {app_dir} to Python path")
+
 import asyncio
 import logging
 import os

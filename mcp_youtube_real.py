@@ -6,6 +6,8 @@ Uses actual get_transcript service
 
 import asyncio
 import logging
+import os
+import sys
 import re
 from typing import Optional, Dict, Any
 from dataclasses import dataclass
@@ -14,10 +16,22 @@ logger = logging.getLogger(__name__)
 
 # Import the actual get_transcript function (yt-dlp version only)
 try:
+    # Log Python path for debugging
+    logger.info(f"Python path: {sys.path}")
+    logger.info(f"Current directory: {os.getcwd()}")
+    logger.info("Attempting to import get_transcript_ytdlp...")
+    
     from get_transcript_ytdlp import get_transcript
     logger.info("✅ Using get_transcript_ytdlp (yt-dlp version)")
-except ImportError:
-    logger.error("❌ get_transcript_ytdlp not available")
+except ImportError as e:
+    logger.error(f"❌ get_transcript_ytdlp not available: {e}")
+    logger.error("Files in current directory:")
+    try:
+        files = os.listdir('.')
+        for f in files:
+            logger.error(f"- {f}")
+    except Exception as list_error:
+        logger.error(f"Failed to list files: {list_error}")
     get_transcript = None
 
 
