@@ -4,9 +4,9 @@
 
 ### **Ошибка Railway:**
 ```
-IndentationError: expected an indented block after 'if' statement on line 1341
-  File "/app/main.py", line 1342
-    try:
+IndentationError: expected an indented block after 'else' statement on line 1491
+  File "/app/main.py", line 1493
+    if text_processor:
     ^
 ```
 
@@ -17,16 +17,16 @@ IndentationError: expected an indented block after 'if' statement on line 1341
 
 ### **Было (неправильно):**
 ```python
+else:
+    # Fallback to original text processor
 if text_processor:
-try:
-    processing_result = await text_processor.process_parallel(transcribed_text)
 ```
 
 ### **Стало (правильно):**
 ```python
-if text_processor:
-    try:
-        processing_result = await text_processor.process_parallel(transcribed_text)
+else:
+    # Fallback to original text processor
+    if text_processor:
 ```
 
 ### **Ключевые изменения:**
@@ -72,6 +72,16 @@ https://your-railway-app.railway.app/debug
 2. **✅ Синтаксис корректен** - нет ошибок компиляции
 3. **✅ Вложенность правильная** - if/try/except/else
 4. **✅ Railway совместимость** - код компилируется
+
+## 📋 **История исправлений:**
+
+### **Исправление #1 (fd47c03):**
+- Исправлены отступы в области строк 1341-1342
+- Корректная структура try/except блоков
+
+### **Исправление #2 (9cf093a):**
+- Исправлен отступ на строке 1492
+- Корректная структура if после else блока
 
 ---
 
