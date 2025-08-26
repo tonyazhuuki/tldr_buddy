@@ -1490,13 +1490,13 @@ async def handle_video_note(message: Message):
                 )
             else:
                 # Fallback to original text processor
-            if text_processor:
-                try:
-                    processing_result = await text_processor.process_parallel(transcribed_text)
-                    formatted_output = text_processor.format_output(processing_result)
-                    
-                    # Create simplified output for video notes
-                    simplified_output = f"""📝 **Основные мысли**
+                if text_processor:
+                    try:
+                        processing_result = await text_processor.process_parallel(transcribed_text)
+                        formatted_output = text_processor.format_output(processing_result)
+                        
+                        # Create simplified output for video notes
+                        simplified_output = f"""📝 **Основные мысли**
 
 {processing_result.summary if hasattr(processing_result, 'summary') else 'Анализ завершен'}
 
@@ -1513,7 +1513,7 @@ async def handle_video_note(message: Message):
 • `/advice` - получить персональный совет от архетипа
 • `/анализ` - психологический анализ (намерения, эмоции, стиль)
 • `/layers` - глубокий анализ скрытых смыслов и мотивов"""
-                    
+                        
                         await processing_msg.edit_text(
                             simplified_output + create_command_footer(), 
                             parse_mode="Markdown"
