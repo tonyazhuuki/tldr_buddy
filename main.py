@@ -1519,8 +1519,8 @@ async def handle_video_note(message: Message):
                             parse_mode="Markdown"
                         )
                     
-                except Exception as text_error:
-                    logger.error(f"Text processing error: {text_error}")
+                    except Exception as text_error:
+                        logger.error(f"Text processing error: {text_error}")
                     # Fallback to transcription only
                     fallback_text = f"""
 📝 **Результат распознавания видео сообщения**
@@ -1537,13 +1537,13 @@ async def handle_video_note(message: Message):
 • `/анализ` - психологический анализ (намерения, эмоции, стиль)
 • `/layers` - глубокий анализ скрытых смыслов и мотивов
 """
-                        await processing_msg.edit_text(
+                    await processing_msg.edit_text(
                             fallback_text + create_command_footer(), 
                             parse_mode="Markdown"
                         )
-            else:
-                # Text processor not initialized - fallback to transcription only
-                fallback_text = f"""
+                else:
+                    # Text processor not initialized - fallback to transcription only
+                    fallback_text = f"""
 📝 **Результат распознавания видео сообщения**
 
 **Текст:**
