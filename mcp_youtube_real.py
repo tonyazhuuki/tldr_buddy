@@ -12,7 +12,14 @@ import re
 from typing import Optional, Dict, Any
 from dataclasses import dataclass
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Log environment info
+logger.info(f"Python version: {sys.version}")
+logger.info(f"Python path: {sys.path}")
+logger.info(f"Current directory: {os.getcwd()}")
 
 # Add retry decorator
 def with_retry(max_retries=3, delay=1):
@@ -35,15 +42,11 @@ def with_retry(max_retries=3, delay=1):
 
 # Import the actual get_transcript function (yt-dlp version only)
 try:
-    # Log Python path for debugging
-    logger.info(f"Python path: {sys.path}")
-    logger.info(f"Current directory: {os.getcwd()}")
-    logger.info("Attempting to import get_transcript_ytdlp...")
-    
+    logger.info("🔍 Attempting to import get_transcript_ytdlp...")
     from get_transcript_ytdlp import get_transcript
-    logger.info("✅ Using get_transcript_ytdlp (yt-dlp version)")
+    logger.info("✅ Successfully imported get_transcript_ytdlp")
 except ImportError as e:
-    logger.error(f"❌ get_transcript_ytdlp not available: {e}")
+    logger.error(f"❌ Failed to import get_transcript_ytdlp: {e}")
     logger.error("Files in current directory:")
     try:
         files = os.listdir('.')
@@ -51,6 +54,10 @@ except ImportError as e:
             logger.error(f"- {f}")
     except Exception as list_error:
         logger.error(f"Failed to list files: {list_error}")
+    get_transcript = None
+except Exception as e:
+    logger.error(f"❌ Unexpected error importing get_transcript_ytdlp: {e}")
+    logger.exception("Full error details:")
     get_transcript = None
 
 
@@ -65,30 +72,57 @@ class MCPTranscriptResult:
     error: Optional[str] = None
 
 
+@dataclass
+class YouTubeVideoInfo:
+    """YouTube video information"""
+    video_id: str
+    title: Optional[str] = None
+    duration: Optional[int] = None
+    channel: Optional[str] = None
+    transcript: Optional[str] = None
+
+
 class RealMCPYouTubeProcessor:
     """Real MCP YouTube processor using get_transcript service"""
     
     def __init__(self):
-        logger.info("Initializing RealMCPYouTubeProcessor...")
+        logger.info("🚀 Initializing RealMCPYouTubeProcessor...")
         try:
             # Check if get_transcript is available
-            logger.info("Checking get_transcript availability...")
+            logger.info("🔍 Checking get_transcript availability...")
             if get_transcript is None:
                 logger.error("❌ get_transcript is None")
                 self.available = False
                 return
                 
             # Try to import required modules
-            logger.info("Importing required modules...")
+            logger.info("📦 Importing required modules...")
             import yt_dlp
             import requests
             logger.info(f"✅ Required modules imported: yt-dlp {yt_dlp.version.__version__}, requests {requests.__version__}")
             
+            # Test get_transcript function
+            logger.info("🧪 Testing get_transcript function...")
+            test_video_id = "dQw4w9WgXcQ"  # Rick Astley - Never Gonna Give You Up
+            try:
+                test_result = get_transcript(test_video_id)
+                if test_result is not None:
+                    logger.info("✅ get_transcript test successful")
+                else:
+                    logger.warning("⚠️ get_transcript test returned None")
+            except Exception as test_error:
+                logger.error(f"❌ get_transcript test failed: {test_error}")
+                logger.exception("Full test error details:")
+                self.available = False
+                return
+            
             # Set availability
             self.available = True
             logger.info("✅ RealMCPYouTubeProcessor initialized successfully")
+            
         except ImportError as e:
             logger.error(f"❌ Failed to import required modules: {e}")
+            logger.exception("Full import error details:")
             self.available = False
         except Exception as e:
             logger.error(f"❌ Error during initialization: {e}")
@@ -264,15 +298,19 @@ class RealMCPYouTubeProcessor:
 
 def create_real_mcp_youtube_processor() -> RealMCPYouTubeProcessor:
     """Create real MCP YouTube processor instance"""
-    logger.info("Creating RealMCPYouTubeProcessor...")
+    logger.info("🏭 Creating RealMCPYouTubeProcessor...")
     try:
+        logger.info("Step 1: Creating instance...")
         processor = RealMCPYouTubeProcessor()
+        
+        logger.info("Step 2: Checking availability...")
         if processor.available:
-            logger.info("✅ RealMCPYouTubeProcessor created successfully")
+            logger.info("✅ RealMCPYouTubeProcessor created and available")
             return processor
         else:
             logger.error("❌ RealMCPYouTubeProcessor created but not available")
             return processor
+            
     except Exception as e:
         logger.error(f"❌ Failed to create RealMCPYouTubeProcessor: {e}")
         logger.exception("Full error details:")
