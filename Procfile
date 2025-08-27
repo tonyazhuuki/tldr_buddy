@@ -1,1 +1,1 @@
-web: python main.py 
+web: uvx run python main.py 
