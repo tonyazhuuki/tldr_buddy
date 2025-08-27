@@ -2187,6 +2187,14 @@ async def main():
                         python_info["get_transcript_content"] = get_transcript_content
                     except Exception as e:
                         python_info["get_transcript_error"] = str(e)
+                        
+                    # Check mcp_youtube_real.py content
+                    try:
+                        with open('mcp_youtube_real.py', 'r') as f:
+                            mcp_content = f.read()
+                        python_info["mcp_content"] = mcp_content
+                    except Exception as e:
+                        python_info["mcp_error"] = str(e)
                     
                     # Get MCP info
                     mcp_info = {
