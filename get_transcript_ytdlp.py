@@ -132,16 +132,19 @@ def download_and_parse_vtt(url):
 def get_transcript(video_id, lang="ru"):
     """Main function - use only yt-dlp, no fallbacks"""
     try:
+        logger.info(f"Getting transcript for video {video_id} using yt-dlp...")
         # Use only yt-dlp
         transcript = get_transcript_ytdlp(video_id, lang)
         if transcript:
+            logger.info(f"✅ Successfully got transcript for video {video_id}")
             return transcript
         else:
-            print(f"❌ No transcript available for video {video_id}")
+            logger.warning(f"❌ No transcript available for video {video_id}")
             return None
         
     except Exception as e:
-        print(f"❌ Error in get_transcript: {e}")
+        logger.error(f"❌ Error in get_transcript: {e}")
+        logger.exception("Full error details:")
         return None
 
 if __name__ == "__main__":
