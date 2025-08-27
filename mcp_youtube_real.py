@@ -14,6 +14,25 @@ from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 
+# Add retry decorator
+def with_retry(max_retries=3, delay=1):
+    """Decorator for retrying functions with delay"""
+    def decorator(func):
+        async def wrapper(*args, **kwargs):
+            last_error = None
+            for attempt in range(max_retries):
+                try:
+                    return await func(*args, **kwargs)
+                except Exception as e:
+                    last_error = e
+                    logger.warning(f"Attempt {attempt + 1}/{max_retries} failed: {e}")
+                    if attempt < max_retries - 1:
+                        await asyncio.sleep(delay * (attempt + 1))  # Exponential backoff
+            logger.error(f"All {max_retries} attempts failed. Last error: {last_error}")
+            raise last_error
+        return wrapper
+    return decorator
+
 # Import the actual get_transcript function (yt-dlp version only)
 try:
     # Log Python path for debugging
@@ -50,11 +69,31 @@ class RealMCPYouTubeProcessor:
     """Real MCP YouTube processor using get_transcript service"""
     
     def __init__(self):
-        self.available = get_transcript is not None
-        if self.available:
-            logger.info("✅ Real MCP YouTube Processor initialized with get_transcript service")
-        else:
-            logger.warning("❌ Real MCP YouTube Processor disabled - get_transcript not available")
+        logger.info("Initializing RealMCPYouTubeProcessor...")
+        try:
+            # Check if get_transcript is available
+            logger.info("Checking get_transcript availability...")
+            if get_transcript is None:
+                logger.error("❌ get_transcript is None")
+                self.available = False
+                return
+                
+            # Try to import required modules
+            logger.info("Importing required modules...")
+            import yt_dlp
+            import requests
+            logger.info(f"✅ Required modules imported: yt-dlp {yt_dlp.version.__version__}, requests {requests.__version__}")
+            
+            # Set availability
+            self.available = True
+            logger.info("✅ RealMCPYouTubeProcessor initialized successfully")
+        except ImportError as e:
+            logger.error(f"❌ Failed to import required modules: {e}")
+            self.available = False
+        except Exception as e:
+            logger.error(f"❌ Error during initialization: {e}")
+            logger.exception("Full error details:")
+            self.available = False
     
     def extract_video_id(self, url: str) -> Optional[str]:
         """Extract video ID from YouTube URL"""
@@ -225,7 +264,19 @@ class RealMCPYouTubeProcessor:
 
 def create_real_mcp_youtube_processor() -> RealMCPYouTubeProcessor:
     """Create real MCP YouTube processor instance"""
-    return RealMCPYouTubeProcessor()
+    logger.info("Creating RealMCPYouTubeProcessor...")
+    try:
+        processor = RealMCPYouTubeProcessor()
+        if processor.available:
+            logger.info("✅ RealMCPYouTubeProcessor created successfully")
+            return processor
+        else:
+            logger.error("❌ RealMCPYouTubeProcessor created but not available")
+            return processor
+    except Exception as e:
+        logger.error(f"❌ Failed to create RealMCPYouTubeProcessor: {e}")
+        logger.exception("Full error details:")
+        return None
 
 
 # Test function

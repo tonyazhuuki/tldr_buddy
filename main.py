@@ -2078,12 +2078,15 @@ async def startup():
             
             logger.info("Step 2: Creating MCP YouTube processor...")
             mcp_youtube_processor = create_real_mcp_youtube_processor()
-            logger.info(f"✅ MCP YouTube processor created: available={mcp_youtube_processor.available}")
             
-            if mcp_youtube_processor.available:
+            if mcp_youtube_processor is None:
+                logger.error("❌ MCP YouTube processor creation failed")
+                mcp_youtube_processor = None
+            elif mcp_youtube_processor.available:
                 logger.info("✅ MCP YouTube processor initialized with get_transcript service")
             else:
                 logger.warning("⚠️ MCP YouTube processor created but not available")
+                mcp_youtube_processor = None
                 
         except ImportError as import_error:
             logger.error(f"MCP YouTube processor import failed: {import_error}")
