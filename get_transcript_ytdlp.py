@@ -149,23 +149,28 @@ def get_transcript(video_id, lang="ru"):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python get_transcript_ytdlp.py <video_id> [language]")
+        logger.error("Usage: python get_transcript_ytdlp.py <video_id> [language]")
         sys.exit(1)
     
     video_id = sys.argv[1]
     lang = sys.argv[2] if len(sys.argv) > 2 else "ru"
     
+    logger.info(f"Running get_transcript_ytdlp.py with video_id={video_id}, lang={lang}")
     transcript = get_transcript(video_id, lang)
     
     if transcript:
-        print(f"\n📝 TRANSCRIPT:")
-        print("=" * 50)
-        print(transcript)
-        print("=" * 50)
+        logger.info("\n📝 TRANSCRIPT:")
+        logger.info("=" * 50)
+        logger.info(transcript)
+        logger.info("=" * 50)
         
         # Save to file
-        with open(f"transcript_{video_id}.txt", "w", encoding="utf-8") as f:
-            f.write(transcript)
-        print(f"\n💾 Transcript saved to transcript_{video_id}.txt")
+        try:
+            with open(f"transcript_{video_id}.txt", "w", encoding="utf-8") as f:
+                f.write(transcript)
+            logger.info(f"💾 Transcript saved to transcript_{video_id}.txt")
+        except Exception as e:
+            logger.error(f"❌ Failed to save transcript: {e}")
+            logger.exception("Full error details:")
     else:
-        print("❌ Failed to get transcript") 
+        logger.error("❌ Failed to get transcript") 
