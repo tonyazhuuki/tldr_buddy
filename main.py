@@ -2165,6 +2165,70 @@ async def main():
             app.router.add_get('/debug', debug_check)
             logger.info("✓ Debug check route added")
             
+            # Add MCP debug route
+            async def mcp_debug_handler(request):
+                """Debug endpoint for MCP processor"""
+                try:
+                    # Get Python info
+                    python_info = {
+                        "version": sys.version,
+                        "path": sys.path,
+                        "cwd": os.getcwd(),
+                        "files": os.listdir('.')
+                    }
+                    
+                    # Get MCP info
+                    mcp_info = {
+                        "available": mcp_youtube_processor is not None and mcp_youtube_processor.available,
+                        "initialized": mcp_youtube_processor is not None,
+                        "get_transcript_available": hasattr(mcp_youtube_processor, 'get_transcript') if mcp_youtube_processor else False
+                    }
+                    
+                    # Get yt-dlp info
+                    try:
+                        import yt_dlp
+                        ytdlp_info = {
+                            "available": True,
+                            "version": yt_dlp.version.__version__
+                        }
+                    except ImportError as e:
+                        ytdlp_info = {
+                            "available": False,
+                            "error": str(e)
+                        }
+                    
+                    # Get requests info
+                    try:
+                        import requests
+                        requests_info = {
+                            "available": True,
+                            "version": requests.__version__
+                        }
+                    except ImportError as e:
+                        requests_info = {
+                            "available": False,
+                            "error": str(e)
+                        }
+                    
+                    debug_info = {
+                        "python": python_info,
+                        "mcp": mcp_info,
+                        "yt-dlp": ytdlp_info,
+                        "requests": requests_info
+                    }
+                    
+                    return web.json_response(debug_info)
+                except Exception as e:
+                    logger.error(f"Error in MCP debug handler: {e}")
+                    logger.exception("Full error details:")
+                    return web.json_response({
+                        "error": str(e),
+                        "type": type(e).__name__
+                    }, status=500)
+            
+            app.router.add_get('/mcp-debug', mcp_debug_handler)
+            logger.info("✓ MCP debug route added")
+            
             # Add root route for basic check
             async def root_handler(request):
                 return web.Response(text="Telegram Bot is running", status=200)
