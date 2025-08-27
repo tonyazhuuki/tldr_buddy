@@ -11,16 +11,14 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install uvx
-RUN curl -L https://github.com/astral-sh/uv/releases/download/0.1.24/uv-installer.sh | sh && \
-    uv venv
+# Install uvx via pip
+RUN pip install uv
 
 # Copy requirements first for better Docker layer caching
 COPY requirements-railway.txt .
 
 # Install Python dependencies using uvx
-RUN . .venv/bin/activate && \
-    uvx install -r requirements-railway.txt
+RUN uv pip install -r requirements-railway.txt
 
 # Copy application code
 COPY . .
@@ -38,4 +36,4 @@ ENV PYTHONUNBUFFERED=1
 EXPOSE 8000
 
 # Default command (can be overridden in docker-compose)
-CMD [".venv/bin/python", "main.py"] 
+CMD ["python", "main.py"] 
