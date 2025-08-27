@@ -8,12 +8,28 @@ import sys
 import json
 import tempfile
 import os
+import logging
 import yt_dlp
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Log environment info
+logger.info(f"Python version: {sys.version}")
+logger.info(f"Python path: {sys.path}")
+logger.info(f"Current directory: {os.getcwd()}")
+logger.info(f"yt-dlp version: {yt_dlp.version.__version__}")
+try:
+    import requests
+    logger.info(f"requests version: {requests.__version__}")
+except ImportError as e:
+    logger.error(f"Failed to import requests: {e}")
 
 def get_transcript_ytdlp(video_id, lang="ru"):
     """Get transcript for YouTube video using yt-dlp Python API"""
     try:
-        print(f"🔍 Getting transcript for {video_id} using yt-dlp Python API...")
+        logger.info(f"🔍 Getting transcript for {video_id} using yt-dlp Python API...")
         
         # Configure yt-dlp options
         ydl_opts = {
@@ -24,11 +40,15 @@ def get_transcript_ytdlp(video_id, lang="ru"):
             'quiet': True,
             'no_warnings': True,
         }
+        logger.info(f"yt-dlp options: {ydl_opts}")
         
         # Create yt-dlp object
+        logger.info("Creating yt-dlp object...")
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             # Get video info
+            logger.info(f"Extracting info for video {video_id}...")
             video_info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=False)
+            logger.info("Video info extracted successfully")
         
         # Extract transcript
         transcript_text = ""
@@ -59,27 +79,32 @@ def get_transcript_ytdlp(video_id, lang="ru"):
                         break
         
         if transcript_text:
-            print(f"✅ Successfully got transcript for {video_id}")
-            print(f"Text length: {len(transcript_text)} chars")
+            logger.info(f"✅ Successfully got transcript for {video_id}")
+            logger.info(f"Text length: {len(transcript_text)} chars")
             return transcript_text
         else:
-            print(f"❌ No transcript found for video {video_id}")
+            logger.warning(f"❌ No transcript found for video {video_id}")
             return None
             
     except Exception as e:
-        print(f"❌ Error getting transcript: {e}")
+        logger.error(f"❌ Error getting transcript: {e}")
+        logger.exception("Full error details:")
         return None
 
 def download_and_parse_vtt(url):
     """Download and parse VTT subtitle file"""
     try:
+        logger.info(f"Downloading VTT from {url}...")
         import requests
         
         # Download VTT file
+        logger.info("Making HTTP request...")
         response = requests.get(url, timeout=30)
         response.raise_for_status()
+        logger.info("VTT file downloaded successfully")
         
         vtt_content = response.text
+        logger.info(f"VTT content length: {len(vtt_content)} chars")
         
         # Simple VTT to text conversion
         lines = vtt_content.split('\n')
@@ -95,10 +120,13 @@ def download_and_parse_vtt(url):
                 not line.isdigit()):
                 text_lines.append(line)
         
-        return ' '.join(text_lines)
+        result = ' '.join(text_lines)
+        logger.info(f"VTT parsed successfully, extracted text length: {len(result)} chars")
+        return result
         
     except Exception as e:
-        print(f"❌ Error parsing VTT: {e}")
+        logger.error(f"❌ Error parsing VTT: {e}")
+        logger.exception("Full error details:")
         return None
 
 def get_transcript(video_id, lang="ru"):
