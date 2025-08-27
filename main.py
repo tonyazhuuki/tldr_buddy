@@ -2070,29 +2070,49 @@ async def startup():
         logger.info("YouTube hybrid processor disabled - using only MCP")
         
         # Initialize MCP YouTube processor
-        logger.info("Initializing MCP YouTube processor...")
+        logger.info("🚀 Initializing MCP YouTube processor...")
         try:
             logger.info("Step 1: Importing create_real_mcp_youtube_processor...")
             from mcp_youtube_real import create_real_mcp_youtube_processor
             logger.info("✅ create_real_mcp_youtube_processor imported successfully")
             
             logger.info("Step 2: Creating MCP YouTube processor...")
-            mcp_youtube_processor = create_real_mcp_youtube_processor()
+            try:
+                mcp_youtube_processor = create_real_mcp_youtube_processor()
+                logger.info(f"✅ create_real_mcp_youtube_processor() returned: {mcp_youtube_processor}")
+            except Exception as create_error:
+                logger.error(f"❌ Failed to create MCP YouTube processor: {create_error}")
+                logger.exception("Full create error details:")
+                mcp_youtube_processor = None
             
             if mcp_youtube_processor is None:
-                logger.error("❌ MCP YouTube processor creation failed")
+                logger.error("❌ MCP YouTube processor creation failed (returned None)")
                 mcp_youtube_processor = None
             elif mcp_youtube_processor.available:
-                logger.info("✅ MCP YouTube processor initialized with get_transcript service")
+                logger.info("✅ MCP YouTube processor initialized and available")
             else:
                 logger.warning("⚠️ MCP YouTube processor created but not available")
+                logger.warning("Checking processor attributes:")
+                try:
+                    for attr in dir(mcp_youtube_processor):
+                        if not attr.startswith('__'):
+                            logger.warning(f"- {attr}: {getattr(mcp_youtube_processor, attr)}")
+                except Exception as attr_error:
+                    logger.error(f"❌ Failed to check processor attributes: {attr_error}")
                 mcp_youtube_processor = None
                 
         except ImportError as import_error:
-            logger.error(f"MCP YouTube processor import failed: {import_error}")
+            logger.error(f"❌ MCP YouTube processor import failed: {import_error}")
+            logger.error("Files in current directory:")
+            try:
+                files = os.listdir('.')
+                for f in files:
+                    logger.error(f"- {f}")
+            except Exception as list_error:
+                logger.error(f"Failed to list files: {list_error}")
             mcp_youtube_processor = None
         except Exception as mcp_error:
-            logger.error(f"MCP YouTube processor initialization failed: {mcp_error}")
+            logger.error(f"❌ MCP YouTube processor initialization failed: {mcp_error}")
             logger.exception("Full error details:")
             mcp_youtube_processor = None
         
