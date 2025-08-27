@@ -1,1 +1,1 @@
-web: uvx run python main.py 
+web: .venv/bin/python main.py 
