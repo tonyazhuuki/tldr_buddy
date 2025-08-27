@@ -2180,6 +2180,14 @@ async def main():
                         "files": os.listdir('.')
                     }
                     
+                    # Check get_transcript_ytdlp.py content
+                    try:
+                        with open('get_transcript_ytdlp.py', 'r') as f:
+                            get_transcript_content = f.read()
+                        python_info["get_transcript_content"] = get_transcript_content
+                    except Exception as e:
+                        python_info["get_transcript_error"] = str(e)
+                    
                     # Get MCP info
                     mcp_info = {
                         "available": mcp_youtube_processor is not None and mcp_youtube_processor.available,
