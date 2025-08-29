@@ -9,16 +9,16 @@ RUN apt-get update && apt-get install -y \
     ffmpeg \
     git \
     curl \
+    python3-pip \
+    python3-dev \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
-
-# Install uvx via pip
-RUN pip install uv
 
 # Copy requirements first for better Docker layer caching
 COPY requirements-railway.txt .
 
-# Install Python dependencies using uvx
-RUN uv pip install -r requirements-railway.txt
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements-railway.txt
 
 # Copy application code
 COPY . .
