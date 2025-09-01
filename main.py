@@ -2072,11 +2072,34 @@ async def startup():
         # Initialize MCP YouTube processor
         logger.info("🚀 Initializing MCP YouTube processor...")
         try:
-            logger.info("Step 1: Importing create_real_mcp_youtube_processor...")
+            logger.info("Step 1: Checking Python environment...")
+            logger.info(f"Python version: {sys.version}")
+            logger.info(f"Python path: {sys.path}")
+            logger.info(f"Current directory: {os.getcwd()}")
+            logger.info("Files in current directory:")
+            try:
+                files = os.listdir('.')
+                for f in files:
+                    logger.info(f"- {f}")
+            except Exception as list_error:
+                logger.error(f"Failed to list files: {list_error}")
+            
+            logger.info("Step 2: Checking get_transcript_ytdlp.py...")
+            if os.path.exists('get_transcript_ytdlp.py'):
+                logger.info("✅ get_transcript_ytdlp.py exists")
+                with open('get_transcript_ytdlp.py', 'r') as f:
+                    content = f.read()
+                    logger.info(f"File content length: {len(content)} chars")
+                    logger.info("First 100 chars of file:")
+                    logger.info(content[:100])
+            else:
+                logger.error("❌ get_transcript_ytdlp.py not found")
+            
+            logger.info("Step 3: Importing create_real_mcp_youtube_processor...")
             from mcp_youtube_real import create_real_mcp_youtube_processor
             logger.info("✅ create_real_mcp_youtube_processor imported successfully")
             
-            logger.info("Step 2: Creating MCP YouTube processor...")
+            logger.info("Step 4: Creating MCP YouTube processor...")
             try:
                 mcp_youtube_processor = create_real_mcp_youtube_processor()
                 logger.info(f"✅ create_real_mcp_youtube_processor() returned: {mcp_youtube_processor}")
@@ -2215,6 +2238,23 @@ async def main():
                         python_info["mcp_content"] = mcp_content
                     except Exception as e:
                         python_info["mcp_error"] = str(e)
+                        
+                    # Check logs
+                    try:
+                        log_files = []
+                        for root, dirs, files in os.walk('logs'):
+                            for file in files:
+                                if file.endswith('.log'):
+                                    log_path = os.path.join(root, file)
+                                    with open(log_path, 'r') as f:
+                                        log_content = f.read()
+                                    log_files.append({
+                                        "path": log_path,
+                                        "content": log_content
+                                    })
+                        python_info["logs"] = log_files
+                    except Exception as e:
+                        python_info["logs_error"] = str(e)
                     
                     # Get MCP info
                     mcp_info = {
